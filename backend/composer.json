@@ -7,14 +7,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "barryvdh/laravel-dompdf": "*",
-        "darkaonline/l5-swagger": "*",
-        "intervention/image": "*",
         "laravel/framework": "^12.0",
-        "laravel/sanctum": "*",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.10.1",
-        "maatwebsite/excel": "*",
-        "spatie/laravel-permission": "*"
+        "phpoffice/phpspreadsheet": "^5.9",
+        "spatie/laravel-permission": "^6.25"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
