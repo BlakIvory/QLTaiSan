@@ -261,7 +261,7 @@ export default function UsersPage() {
       {/* Filter Toolbar */}
       <div className="card p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
         <Input
-          placeholder="Tìm theo họ tên, email, mã nhân viên..."
+          placeholder="Vui lòng nhập họ tên, email hoặc mã nhân viên"
           prefix={<SearchOutlined className="text-slate-400" />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -271,7 +271,7 @@ export default function UsersPage() {
         />
 
         <Select
-          placeholder="-- Tất cả nhóm quyền --"
+          placeholder="Vui lòng chọn nhóm quyền"
           value={roleFilter || undefined}
           onChange={(val) => setRoleFilter(val || '')}
           allowClear
@@ -337,14 +337,14 @@ export default function UsersPage() {
               name="name"
               rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
             >
-              <Input placeholder="Ví dụ: Nguyễn Văn An" size="large" />
+              <Input placeholder="Vui lòng nhập họ và tên" size="large" />
             </Form.Item>
 
             <Form.Item
               label="Mã nhân viên"
               name="employee_code"
             >
-              <Input placeholder="Ví dụ: NV001" size="large" />
+              <Input placeholder="Vui lòng nhập mã nhân viên" size="large" />
             </Form.Item>
           </div>
 
@@ -357,7 +357,7 @@ export default function UsersPage() {
                 { type: 'email', message: 'Email không hợp lệ' },
               ]}
             >
-              <Input placeholder="an.nguyen@hospital.local" size="large" />
+              <Input placeholder="Vui lòng nhập email" size="large" />
             </Form.Item>
 
             <Form.Item
@@ -365,17 +365,17 @@ export default function UsersPage() {
               name="password"
               rules={editingUser ? [] : [{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
             >
-              <Input.Password placeholder="••••••••" size="large" />
+              <Input.Password placeholder="Vui lòng nhập mật khẩu" size="large" />
             </Form.Item>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Form.Item label="Số điện thoại" name="phone">
-              <Input placeholder="0988777666" size="large" />
+              <Input placeholder="Vui lòng nhập số điện thoại" size="large" />
             </Form.Item>
 
             <Form.Item label="Khoa / Phòng trực thuộc" name="organization_id">
-              <Select placeholder="-- Chọn khoa phòng --" allowClear size="large" showSearch filterOption={filterOptionUnaccented}>
+              <Select placeholder="Vui lòng chọn khoa phòng" allowClear size="large" showSearch filterOption={filterOptionUnaccented}>
                 {organizations?.map((org: any) => (
                   <Select.Option key={org.id} value={org.id}>
                     {org.name}
@@ -392,7 +392,7 @@ export default function UsersPage() {
           >
             <Select
               mode="multiple"
-              placeholder="Chọn nhóm quyền..."
+              placeholder="Vui lòng chọn nhóm quyền"
               size="large"
               optionFilterProp="children"
             >

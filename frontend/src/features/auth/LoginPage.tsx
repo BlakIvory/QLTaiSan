@@ -69,7 +69,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="email@benhvien.vn"
+                placeholder="Vui lòng nhập email"
                 required
                 className="w-full rounded-lg border border-white/20 bg-white/10 backdrop-blur px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all"
               />
@@ -86,7 +86,7 @@ export default function LoginPage() {
                   type={showPass ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Vui lòng nhập mật khẩu"
                   required
                   className="w-full rounded-lg border border-white/20 bg-white/10 backdrop-blur px-3 py-2.5 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all"
                 />

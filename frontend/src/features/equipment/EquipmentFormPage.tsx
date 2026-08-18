@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -13,6 +14,7 @@ import {
   Spin,
   Space,
   Typography,
+  Modal,
 } from 'antd'
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -21,7 +23,7 @@ import { API_ENDPOINTS } from '../../lib/constants'
 import { useOptions } from '../../hooks/useOptions'
 import { filterOptionUnaccented } from '../../lib/utils'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 const { TextArea } = Input
 
 export default function EquipmentFormPage() {
@@ -70,8 +72,8 @@ export default function EquipmentFormPage() {
         original_price: existingEquipment.original_price,
         notes: existingEquipment.notes,
       })
-    } else if (!isEditMode && orgs && orgs.length > 0) {
-      const csvcOrg = orgs.find((o: any) => {
+    } else if (!isEditMode && organizations && organizations.length > 0) {
+      const csvcOrg = organizations.find((o: any) => {
         const nameLower = o.name?.toLowerCase() || ''
         return (
           nameLower.includes('cơ sở vật chất') ||
@@ -87,7 +89,7 @@ export default function EquipmentFormPage() {
         form.setFieldValue('organization_id', csvcOrg.id)
       }
     }
-  }, [existingEquipment, isEditMode, orgs, form])
+  }, [existingEquipment, isEditMode, organizations, form])
 
   const mutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -174,7 +176,7 @@ export default function EquipmentFormPage() {
             name="name"
             rules={[{ required: true, message: 'Vui lòng nhập tên thiết bị' }]}
           >
-            <Input placeholder="Ví dụ: Máy siêu âm màu 4D Voluson E10" />
+            <Input placeholder="Vui lòng nhập tên thiết bị" />
           </Form.Item>
 
           <Form.Item
@@ -182,7 +184,7 @@ export default function EquipmentFormPage() {
             name="equipment_type_id"
             rules={[{ required: true, message: 'Vui lòng chọn loại thiết bị' }]}
           >
-            <Select placeholder="-- Chọn loại thiết bị --" showSearch filterOption={filterOptionUnaccented}>
+            <Select placeholder="Vui lòng chọn loại thiết bị" showSearch filterOption={filterOptionUnaccented}>
               {equipmentTypes?.map((t: any) => (
                 <Select.Option key={t.id} value={t.id}>
                   {t.name}
@@ -192,21 +194,21 @@ export default function EquipmentFormPage() {
           </Form.Item>
 
           <Form.Item label="Mã tài sản cố định" name="asset_code">
-            <Input placeholder="Ví dụ: TS-SA-01" />
+            <Input placeholder="Vui lòng nhập mã tài sản" />
           </Form.Item>
 
           <Form.Item label="Model" name="model">
-            <Input placeholder="Ví dụ: Voluson E10" />
+            <Input placeholder="Vui lòng nhập model" />
           </Form.Item>
 
           <Form.Item label="Số Serial" name="serial">
-            <Input placeholder="Ví dụ: SN-GE-4D-9988" />
+            <Input placeholder="Vui lòng nhập số serial" />
           </Form.Item>
         </Card>
 
         <Card title="2. Đơn vị quản lý & Mức độ quan trọng" style={{ marginBottom: 24 }} className="shadow-xs">
-          <Form.Item label="Khoa / Phòng quản lý" name="organization_id" help="Mặc định: Phòng CSVC / Vật tư tiếp nhận (Cấp >= 1)">
-            <Select placeholder="-- Mặc định: Phòng CSVC / Vật tư tiếp nhận --" allowClear showSearch filterOption={filterOptionUnaccented}>
+          <Form.Item label="Khoa / Phòng quản lý" name="organization_id">
+            <Select placeholder="Vui lòng chọn đơn vị quản lý" allowClear showSearch filterOption={filterOptionUnaccented}>
               {organizations?.filter((org: any) => org.level === undefined || org.level >= 1).map((org: any) => (
                 <Select.Option key={org.id} value={org.id}>
                   {org.name} {org.level !== undefined ? `(Cấp ${org.level})` : ''}
@@ -216,7 +218,7 @@ export default function EquipmentFormPage() {
           </Form.Item>
 
           <Form.Item label="Mức độ quan trọng" name="importance_level">
-            <Select placeholder="-- Chọn mức độ quan trọng --">
+            <Select placeholder="Vui lòng chọn mức độ quan trọng">
               {importanceOptions.map((opt) => (
                 <Select.Option key={opt.value} value={opt.value}>
                   {opt.label} ({opt.value})
@@ -228,15 +230,15 @@ export default function EquipmentFormPage() {
 
         <Card title="3. Thông số kỹ thuật & Giá trị" style={{ marginBottom: 24 }} className="shadow-xs">
           <Form.Item label="Năm sản xuất" name="year_of_manufacture">
-            <InputNumber style={{ width: '100%' }} placeholder="2024" min={1900} max={2100} />
+            <InputNumber style={{ width: '100%' }} placeholder="Vui lòng nhập năm sản xuất" min={1900} max={2100} />
           </Form.Item>
 
           <Form.Item label="Ngày mua" name="purchase_date">
-            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Chọn ngày mua" />
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Vui lòng chọn ngày mua" />
           </Form.Item>
 
           <Form.Item label="Ngày đưa vào sử dụng" name="in_use_date">
-            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Chọn ngày đưa vào sử dụng" />
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Vui lòng chọn ngày đưa vào sử dụng" />
           </Form.Item>
 
           <Form.Item label="Nguyên giá (VNĐ)" name="original_price">
@@ -244,12 +246,12 @@ export default function EquipmentFormPage() {
               style={{ width: '100%' }}
               formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as any}
-              placeholder="1,200,000,000"
+              placeholder="Vui lòng nhập nguyên giá"
             />
           </Form.Item>
 
           <Form.Item label="Ghi chú" name="notes">
-            <TextArea rows={3} placeholder="Nhập ghi chú chi tiết về thiết bị..." />
+            <TextArea rows={3} placeholder="Vui lòng nhập ghi chú" />
           </Form.Item>
         </Card>
 

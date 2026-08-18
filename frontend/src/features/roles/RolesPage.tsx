@@ -323,7 +323,7 @@ export default function RolesPage() {
             rules={[{ required: true, message: 'Vui lòng nhập mã tên nhóm quyền' }]}
           >
             <Input
-              placeholder="Ví dụ: technician, department_staff, manager..."
+              placeholder="Vui lòng nhập tên vai trò"
               size="large"
               disabled={editingRole?.name === 'admin'}
               className="font-mono"

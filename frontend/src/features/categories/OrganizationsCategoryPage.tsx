@@ -162,7 +162,7 @@ export default function OrganizationsCategoryPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên hoặc mã đơn vị..."
+            placeholder="Vui lòng nhập tên hoặc mã đơn vị"
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
           />
         </div>
@@ -320,7 +320,7 @@ export default function OrganizationsCategoryPage() {
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="Ví dụ: K-NOI-TONG-HOP"
+                  placeholder="Vui lòng nhập mã đơn vị"
                   className="input-field uppercase font-mono"
                   required
                 />
@@ -332,7 +332,7 @@ export default function OrganizationsCategoryPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ví dụ: Khoa Nội Tổng hợp"
+                  placeholder="Vui lòng nhập tên đơn vị"
                   className="input-field"
                   required
                 />

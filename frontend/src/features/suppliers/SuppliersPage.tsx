@@ -31,7 +31,7 @@ export default function SuppliersPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên nhà cung cấp, mã số thuế, số điện thoại..."
+            placeholder="Vui lòng nhập tên nhà cung cấp, mã số thuế hoặc số điện thoại"
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
           />
         </div>

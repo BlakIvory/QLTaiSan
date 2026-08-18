@@ -57,13 +57,13 @@ const navSections: NavSection[] = [
         roles: ['admin', 'pvtttby'],
         permissions: ['equipment.receive'],
       },
-      // {
-      //   label: 'Cấp phát thiết bị',
-      //   icon: HandshakeIcon,
-      //   to: '/allocations',
-      //   roles: ['admin', 'pvtttby'],
-      //   permissions: ['equipment.allocate'],
-      // },
+      {
+        label: 'Cấp phát thiết bị',
+        icon: HandshakeIcon,
+        to: '/allocations',
+        roles: ['admin', 'pvtttby'],
+        permissions: ['equipment.allocate'],
+      },
       {
         label: 'Điều chuyển thiết bị',
         icon: ArrowRightLeft,

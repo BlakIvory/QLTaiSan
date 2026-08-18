@@ -115,7 +115,7 @@ export default function DamageReportsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo mã sự cố, tên thiết bị..."
+            placeholder="Vui lòng nhập mã sự cố hoặc tên thiết bị"
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -287,7 +287,7 @@ export default function DamageReportsPage() {
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Mô tả chi tiết hiện tượng hư hỏng, lỗi hiển thị, âm thanh bất thường..."
+                  placeholder="Vui lòng nhập mô tả hư hỏng"
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
                 />
               </div>

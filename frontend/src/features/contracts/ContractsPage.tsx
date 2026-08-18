@@ -16,7 +16,7 @@ export default function ContractsPage() {
       <div className="card p-4">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Tìm theo số hợp đồng, tên đối tác..." className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <input type="text" placeholder="Vui lòng nhập số hợp đồng hoặc tên đối tác" className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
         </div>
       </div>
       <div className="card p-12 text-center text-slate-400">

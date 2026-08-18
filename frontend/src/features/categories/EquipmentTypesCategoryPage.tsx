@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
-import { Layers, Plus, Search, Edit, X, Save, Tag } from 'lucide-react'
+import { Layers, Plus, Search, Edit, X, Save } from 'lucide-react'
 
 interface EquipmentType {
   id: number
@@ -38,6 +39,10 @@ export default function EquipmentTypesCategoryPage() {
   const [maintCycle, setMaintCycle] = useState('180')
   const [inspCycle, setInspCycle] = useState('365')
   const [formError, setFormError] = useState<string | null>(null)
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<EquipmentGroup | null>(null)
+  const [groupCode, setGroupCode] = useState('')
+  const [groupName, setGroupName] = useState('')
 
   // Fetch Types & Groups
   const { data: types, isLoading: isLoadingTypes } = useQuery<EquipmentType[]>({
@@ -70,6 +75,34 @@ export default function EquipmentTypesCategoryPage() {
     setIsTypeModalOpen(true)
   }
 
+  const handleOpenGroupModal = (group?: EquipmentGroup) => {
+    setFormError(null)
+    setEditingGroup(group ?? null)
+    setGroupCode(group?.code ?? '')
+    setGroupName(group?.name ?? '')
+    setIsGroupModalOpen(true)
+  }
+
+  const saveGroupMutation = useMutation({
+    mutationFn: (payload: { code: string; name: string }) => editingGroup
+      ? api.put(`${API_ENDPOINTS.CATEGORIES.EQUIPMENT_GROUPS}/${editingGroup.id}`, payload)
+      : api.post(API_ENDPOINTS.CATEGORIES.EQUIPMENT_GROUPS, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-groups-all'] })
+      setIsGroupModalOpen(false)
+    },
+    onError: (err: any) => setFormError(err.response?.data?.message || 'Không thể lưu nhóm thiết bị.'),
+  })
+
+  const handleGroupSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!groupCode.trim() || !groupName.trim()) {
+      setFormError('Vui lòng nhập Mã và Tên nhóm thiết bị.')
+      return
+    }
+    saveGroupMutation.mutate({ code: groupCode.trim().toUpperCase(), name: groupName.trim() })
+  }
+
   const saveTypeMutation = useMutation({
     mutationFn: (payload: any) => {
       if (editingType) {
@@ -93,11 +126,15 @@ export default function EquipmentTypesCategoryPage() {
       setFormError('Vui lòng nhập Mã và Tên loại thiết bị.')
       return
     }
+    if (!groupId) {
+      setFormError('Vui lòng chọn nhóm thiết bị.')
+      return
+    }
 
     saveTypeMutation.mutate({
       code: typeCode.trim().toUpperCase(),
       name: typeName.trim(),
-      equipment_group_id: groupId ? Number(groupId) : null,
+      equipment_group_id: Number(groupId),
       maintenance_cycle_days: Number(maintCycle),
       inspection_cycle_days: Number(inspCycle),
     })
@@ -126,9 +163,9 @@ export default function EquipmentTypesCategoryPage() {
           </h1>
           <p className="page-subtitle">Quản lý phân loại chủng loại trang thiết bị trong bệnh viện</p>
         </div>
-        <button onClick={() => handleOpenTypeModal()} className="btn-primary flex items-center gap-2">
+        <button onClick={() => activeTab === 'types' ? handleOpenTypeModal() : handleOpenGroupModal()} className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          <span>Thêm Loại thiết bị mới</span>
+          <span>{activeTab === 'types' ? 'Thêm Loại thiết bị mới' : 'Thêm Nhóm thiết bị mới'}</span>
         </button>
       </div>
 
@@ -163,7 +200,7 @@ export default function EquipmentTypesCategoryPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo mã hoặc tên..."
+            placeholder={activeTab === 'types' ? 'Vui lòng nhập mã hoặc tên loại thiết bị' : 'Vui lòng nhập mã hoặc tên nhóm thiết bị'}
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
           />
         </div>
@@ -239,12 +276,13 @@ export default function EquipmentTypesCategoryPage() {
                   <th className="py-3 px-4">Mã nhóm</th>
                   <th className="py-3 px-4">Tên nhóm thiết bị</th>
                   <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {isLoadingGroups ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-500">
+                    <td colSpan={4} className="py-8 text-center text-slate-500">
                       Đang tải Nhóm thiết bị...
                     </td>
                   </tr>
@@ -254,6 +292,11 @@ export default function EquipmentTypesCategoryPage() {
                     <td className="py-3 px-4 font-medium text-slate-800">{g.name}</td>
                     <td className="py-3 px-4">
                       <span className="badge badge-green">Hoạt động</span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button onClick={() => handleOpenGroupModal(g)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg" title="Chỉnh sửa">
+                        <Edit className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -292,7 +335,7 @@ export default function EquipmentTypesCategoryPage() {
                   type="text"
                   value={typeCode}
                   onChange={(e) => setTypeCode(e.target.value)}
-                  placeholder="Ví dụ: MAY-SIEU-AM"
+                  placeholder="Vui lòng nhập mã loại thiết bị"
                   className="input-field uppercase font-mono"
                   required
                 />
@@ -304,20 +347,21 @@ export default function EquipmentTypesCategoryPage() {
                   type="text"
                   value={typeName}
                   onChange={(e) => setTypeName(e.target.value)}
-                  placeholder="Ví dụ: Máy siêu âm 4D"
+                  placeholder="Vui lòng nhập tên loại thiết bị"
                   className="input-field"
                   required
                 />
               </div>
 
               <div>
-                <label className="label">Thuộc nhóm thiết bị</label>
+                <label className="label">Thuộc nhóm thiết bị (*)</label>
                 <select
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
                   className="form-select"
+                  required
                 >
-                  <option value="">-- Chọn nhóm thiết bị --</option>
+                  <option value="">Vui lòng chọn nhóm thiết bị</option>
                   {groups?.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
@@ -363,6 +407,26 @@ export default function EquipmentTypesCategoryPage() {
                   <Save className="w-4 h-4" />
                   <span>{saveTypeMutation.isPending ? 'Đang lưu...' : 'Lưu thông tin'}</span>
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isGroupModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl animate-scale-in">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-semibold text-slate-800 text-lg">{editingGroup ? 'Chỉnh sửa Nhóm thiết bị' : 'Thêm mới Nhóm thiết bị'}</h3>
+              <button onClick={() => setIsGroupModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><X className="w-5 h-5" /></button>
+            </div>
+            {formError && <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs">{formError}</div>}
+            <form onSubmit={handleGroupSubmit} className="space-y-4 text-sm">
+              <div><label className="label">Mã nhóm thiết bị (*)</label><input value={groupCode} onChange={e => setGroupCode(e.target.value)} placeholder="Vui lòng nhập mã nhóm thiết bị" className="input-field uppercase font-mono" required /></div>
+              <div><label className="label">Tên nhóm thiết bị (*)</label><input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Vui lòng nhập tên nhóm thiết bị" className="input-field" required /></div>
+              <div className="flex items-center justify-end gap-3 pt-3 border-t">
+                <button type="button" onClick={() => setIsGroupModalOpen(false)} className="btn-outline text-xs">Hủy</button>
+                <button type="submit" disabled={saveGroupMutation.isPending} className="btn-primary text-xs flex items-center gap-1.5"><Save className="w-4 h-4" /><span>{saveGroupMutation.isPending ? 'Đang lưu...' : 'Lưu thông tin'}</span></button>
               </div>
             </form>
           </div>

@@ -98,7 +98,7 @@ export default function SystemOptionsCategoryPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Lọc option..."
+                placeholder="Vui lòng nhập tùy chọn cần lọc"
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>

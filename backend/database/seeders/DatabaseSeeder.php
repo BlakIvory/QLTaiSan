@@ -107,6 +107,23 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        $warehouse = Organization::where('code', 'P-VAT-TU')->firstOrFail();
+        $dept1 = Organization::where('code', 'K-NOI-TONG-HOP')->firstOrFail();
+        $dept2 = Organization::where('code', 'K-CAPCUU')->firstOrFail();
+
+        $loc1 = Location::firstOrCreate(
+            ['code' => 'KNOI-P101'],
+            ['name' => 'Phòng 101', 'organization_id' => $dept1->id, 'is_active' => true]
+        );
+        $loc2 = Location::firstOrCreate(
+            ['code' => 'KCC-HSTC'],
+            ['name' => 'Khu hồi sức tích cực', 'organization_id' => $dept2->id, 'is_active' => true]
+        );
+        $loc3 = Location::firstOrCreate(
+            ['code' => 'PVT-KHO'],
+            ['name' => 'Kho thiết bị', 'organization_id' => $warehouse->id, 'is_active' => true]
+        );
+
         // ─── Countries ──────────────────────────────────────────────
         $vn = Country::firstOrCreate(['code' => 'VN'], ['name' => 'Việt Nam', 'is_active' => true]);
         $jp = Country::firstOrCreate(['code' => 'JP'], ['name' => 'Nhật Bản', 'is_active' => true]);

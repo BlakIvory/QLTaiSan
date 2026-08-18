@@ -1,21 +1,21 @@
-﻿export default function AllocationsPage() {
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="page-title">Phiếu Cấp phát</h1>
-        <p className="page-subtitle">Chức năng đang được phát triển</p>
-      </div>
-      <div className="card">
-        <div className="card-body flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-slate-700 mb-2">Phiếu Cấp phát</h3>
-          <p className="text-slate-500 text-sm max-w-sm">Module này đang được phát triển. Vui lòng quay lại sau.</p>
-        </div>
-      </div>
-    </div>
-  )
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Alert, Button, Card, DatePicker, Form, Input, Modal, Select, Table, Tag, message } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
+import api from '../../api/axios'; import { API_ENDPOINTS } from '../../lib/constants'
+
+const labels:any={PENDING:['Chờ xác nhận','orange'],CONFIRMED:['Chờ bàn giao','blue'],COMPLETED:['Đã bàn giao','green']}
+export default function AllocationsPage(){
+ const qc=useQueryClient(); const [open,setOpen]=useState(false); const [form]=Form.useForm(); const [fromOrg,setFromOrg]=useState<number>()
+ const {data=[]}=useQuery({queryKey:['allocations'],queryFn:()=>api.get(API_ENDPOINTS.ALLOCATIONS.BASE).then(r=>r.data.data)})
+ const {data:orgs=[]}=useQuery({queryKey:['organizations-list'],queryFn:()=>api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then(r=>r.data.data)})
+ const {data:equipment=[]}=useQuery({queryKey:['equipment-stock',fromOrg],queryFn:()=>api.get(API_ENDPOINTS.EQUIPMENT.BASE,{params:{per_page:500,status:'IN_STOCK',organization_id:fromOrg}}).then(r=>r.data.data),enabled:!!fromOrg})
+ const refresh=()=>{qc.invalidateQueries({queryKey:['allocations']});qc.invalidateQueries({queryKey:['equipment']});qc.invalidateQueries({queryKey:['equipment-stock']})}
+ const create=useMutation({mutationFn:(v:any)=>api.post(API_ENDPOINTS.ALLOCATIONS.BASE,{...v,allocation_date:dayjs(v.allocation_date).format('YYYY-MM-DD'),items:v.equipment_ids.map((id:number)=>({equipment_id:id,condition_at_handover:'Tốt'}))}),onSuccess:()=>{message.success('Đã lập phiếu cấp phát');setOpen(false);form.resetFields();refresh()},onError:(e:any)=>message.error(e.response?.data?.message)})
+ const action=useMutation({mutationFn:({id,type}:{id:number,type:string})=>api.post(`${API_ENDPOINTS.ALLOCATIONS.BASE}/${id}/${type}`),onSuccess:r=>{message.success(r.data.message);refresh()},onError:(e:any)=>message.error(e.response?.data?.message)})
+ const cols:any[]=[{title:'Mã phiếu',dataIndex:'code'},{title:'Từ kho',render:(_:any,r:any)=>r.from_organization?.name},{title:'Bộ phận sử dụng',render:(_:any,r:any)=>r.to_organization?.name},{title:'Tài sản',render:(_:any,r:any)=>r.items?.map((x:any)=>x.equipment?.equipment_code).join(', ')},{title:'Ngày',dataIndex:'allocation_date'},{title:'Trạng thái',render:(_:any,r:any)=><Tag color={(labels[r.status]||[r.status,'default'])[1]}>{(labels[r.status]||[r.status])[0]}</Tag>},{title:'Thao tác',render:(_:any,r:any)=>r.status==='PENDING'?<Button onClick={()=>action.mutate({id:r.id,type:'confirm'})}>Xác nhận</Button>:r.status==='CONFIRMED'?<Button type="primary" onClick={()=>action.mutate({id:r.id,type:'handover'})}>Bàn giao</Button>:null}]
+ return <div className="space-y-5"><div className="flex justify-between"><div><h1 className="page-title">Cấp phát & Bàn giao</h1><p className="page-subtitle">Giao tài sản từ kho cho bộ phận sử dụng</p></div><Button type="primary" icon={<PlusOutlined/>} onClick={()=>{form.setFieldsValue({allocation_date:dayjs()});setOpen(true)}}>Lập phiếu cấp phát</Button></div><Card><Table rowKey="id" dataSource={data} columns={cols}/></Card>
+ <Modal title="Lập phiếu cấp phát" open={open} onCancel={()=>setOpen(false)} onOk={()=>form.submit()} confirmLoading={create.isPending}><Alert className="mb-4" type="info" showIcon message="Cấp phát chỉ áp dụng cho tài sản đang ở trạng thái Trong kho. Để chuyển tài sản đang sử dụng giữa các khoa/phòng, vui lòng dùng chức năng Luân chuyển tài sản."/><Form form={form} layout="vertical" onFinish={v=>create.mutate(v)}><Form.Item name="from_organization_id" label="Kho nguồn" rules={[{required:true}]}><Select placeholder="Vui lòng chọn kho nguồn" onChange={v=>{setFromOrg(v);form.setFieldValue('equipment_ids',[])}} options={orgs.filter((o:any)=>o.type==='WAREHOUSE').map((o:any)=>({value:o.id,label:o.name}))}/></Form.Item><Form.Item name="to_organization_id" label="Bộ phận nhận" rules={[{required:true}]}><Select placeholder="Vui lòng chọn bộ phận nhận" options={orgs.filter((o:any)=>o.id!==fromOrg && o.type!=='WAREHOUSE').map((o:any)=>({value:o.id,label:o.name}))}/></Form.Item><Form.Item name="allocation_date" label="Ngày cấp phát" rules={[{required:true}]}><DatePicker placeholder="Vui lòng chọn ngày cấp phát" className="w-full"/></Form.Item><Form.Item name="equipment_ids" label="Tài sản trong kho" rules={[{required:true}]} extra={fromOrg && equipment.length===0 ? 'Kho này hiện không có tài sản ở trạng thái Trong kho.' : undefined}><Select placeholder="Vui lòng chọn tài sản trong kho" mode="multiple" options={equipment.map((e:any)=>({value:e.id,label:`${e.equipment_code} - ${e.name}`}))}/></Form.Item><Form.Item name="notes" label="Ghi chú"><Input.TextArea placeholder="Vui lòng nhập ghi chú"/></Form.Item></Form></Modal></div>
 }

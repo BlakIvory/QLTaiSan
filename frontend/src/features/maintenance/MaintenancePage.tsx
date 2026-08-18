@@ -34,7 +34,7 @@ export default function MaintenancePage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm kế hoạch bảo trì theo mã thiết bị, tên..."
+            placeholder="Vui lòng nhập mã hoặc tên thiết bị"
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
           />
         </div>

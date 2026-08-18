@@ -108,16 +108,14 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::post('receipts/{receipt}/confirm', [\App\Http\Controllers\Api\V1\ReceiptController::class, 'confirm']);
 
     // Allocations (Cấp phát)
-    Route::apiResource('allocations', \App\Http\Controllers\Api\V1\AllocationController::class);
+    Route::apiResource('allocations', \App\Http\Controllers\Api\V1\AllocationController::class)->except(['update']);
     Route::post('allocations/{allocation}/confirm',  [\App\Http\Controllers\Api\V1\AllocationController::class, 'confirm']);
     Route::post('allocations/{allocation}/handover', [\App\Http\Controllers\Api\V1\AllocationController::class, 'handover']);
     // Receipts & Handovers (Tiếp nhận & Bàn giao)
-    Route::get('receipts/{receipt}/export-word', [\App\Http\Controllers\Api\V1\ReceiptController::class, 'exportWord']);
     Route::post('receipts/{receipt}/upload-attachment', [\App\Http\Controllers\Api\V1\ReceiptController::class, 'uploadAttachment']);
-    Route::apiResource('receipts', \App\Http\Controllers\Api\V1\ReceiptController::class);
 
     // Transfers (Điều chuyển)
-    Route::apiResource('transfers', TransferController::class);
+    Route::apiResource('transfers', TransferController::class)->except(['update']);
     Route::post('transfers/{transfer}/approve', [TransferController::class, 'approve']);
     Route::post('transfers/{transfer}/reject',  [TransferController::class, 'reject']);
     Route::post('transfers/{transfer}/handover',[TransferController::class, 'handover']);

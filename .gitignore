@@ -1,0 +1,5 @@
+*.log
+backend/php.ini
+backend/composer.phar
+run-backend.cmd
+run-frontend.cmd

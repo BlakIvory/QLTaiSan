@@ -78,9 +78,12 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'code'                   => 'required|string|unique:equipment_types,code',
             'name'                   => 'required|string|max:255',
-            'equipment_group_id'     => 'nullable|exists:equipment_groups,id',
+            'equipment_group_id'     => 'required|exists:equipment_groups,id',
             'maintenance_cycle_days' => 'nullable|integer',
             'inspection_cycle_days'  => 'nullable|integer',
+        ], [
+            'equipment_group_id.required' => 'Vui lòng chọn nhóm thiết bị.',
+            'equipment_group_id.exists' => 'Nhóm thiết bị đã chọn không tồn tại.',
         ]);
         $validated['is_active'] = true;
         $validated['requires_maintenance'] = !empty($validated['maintenance_cycle_days']);
@@ -101,7 +104,7 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'code'                   => 'sometimes|string|unique:equipment_types,code,' . $id,
             'name'                   => 'sometimes|string|max:255',
-            'equipment_group_id'     => 'nullable|exists:equipment_groups,id',
+            'equipment_group_id'     => 'sometimes|required|exists:equipment_groups,id',
             'maintenance_cycle_days' => 'nullable|integer',
             'inspection_cycle_days'  => 'nullable|integer',
             'is_active'              => 'boolean',

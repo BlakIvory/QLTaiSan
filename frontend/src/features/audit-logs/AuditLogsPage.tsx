@@ -31,7 +31,7 @@ export default function AuditLogsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo hành động, module, người thực hiện..."
+            placeholder="Vui lòng nhập hành động, module hoặc người thực hiện"
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
           />
         </div>

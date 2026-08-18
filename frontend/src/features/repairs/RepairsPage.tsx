@@ -109,7 +109,7 @@ export default function RepairsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm mã phiếu, tên thiết bị..."
+            placeholder="Vui lòng nhập mã phiếu hoặc tên thiết bị"
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -233,7 +233,7 @@ export default function RepairsPage() {
                   type="text"
                   value={repairUnit}
                   onChange={(e) => setRepairUnit(e.target.value)}
-                  placeholder="VD: Phòng Vật tư hoặc Công ty GE Healthcare..."
+                  placeholder="Vui lòng nhập đơn vị sửa chữa"
                   className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm"
                 />
               </div>

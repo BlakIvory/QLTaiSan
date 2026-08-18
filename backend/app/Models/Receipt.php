@@ -3,34 +3,33 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Receipt extends Model
 {
+    use SoftDeletes;
+
     protected $guarded = [];
 
     protected $casts = [
-        'from_date' => 'date:Y-m-d',
-        'to_date'   => 'date:Y-m-d',
+        'receipt_date' => 'date:Y-m-d',
+        'invoice_date' => 'date:Y-m-d',
+        'total_amount' => 'decimal:2',
     ];
-
-    public function equipment()
-    {
-        return $this->belongsTo(Equipment::class);
-    }
 
     public function items()
     {
         return $this->hasMany(ReceiptItem::class)->with('equipment');
     }
 
-    public function fromOrganization()
+    public function supplier()
     {
-        return $this->belongsTo(Organization::class, 'from_organization_id');
+        return $this->belongsTo(Supplier::class);
     }
 
-    public function toOrganization()
+    public function organization()
     {
-        return $this->belongsTo(Organization::class, 'to_organization_id');
+        return $this->belongsTo(Organization::class);
     }
 
     public function creator()
