@@ -38,3 +38,21 @@ export function filterOptionUnaccented(input: string, option?: any): boolean {
 
   return cleanText.includes(cleanInput)
 }
+import dayjs from 'dayjs'
+import { DATE_TIME_FORMAT } from './constants'
+
+export function formatDate(value?: string | Date | null): string {
+  if (!value) return '—'
+  const date = dayjs(value)
+  return date.isValid() ? date.format(DATE_TIME_FORMAT.DATE) : '—'
+}
+
+export function formatDateTime(value?: string | Date | null): string {
+  if (!value) return '—'
+  const date = dayjs(value)
+  return date.isValid() ? date.format(DATE_TIME_FORMAT.DATE_TIME) : '—'
+}
+
+export function formatApiDate(value: string | Date): string {
+  return dayjs(value).format(DATE_TIME_FORMAT.API_DATE)
+}

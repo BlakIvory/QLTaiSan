@@ -11,6 +11,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
+      // Mỗi lần chuyển menu và trang được mount lại, luôn lấy dữ liệu mới cho
+      // danh sách và các combobox thay vì chỉ dùng cache trong staleTime.
+      refetchOnMount: 'always',
       retry: (failureCount, error: any) => {
         // Don't retry 401, 403, 404
         if ([401, 403, 404].includes(error?.response?.status)) return false

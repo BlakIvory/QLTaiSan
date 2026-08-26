@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Card, DatePicker, Form, Input, Modal, Select, Space, Table, Tag, message } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import api from '../../api/axios'; import { API_ENDPOINTS } from '../../lib/constants'
+import api from '../../api/axios'; import { API_ENDPOINTS, DATE_TIME_FORMAT } from '../../lib/constants'
 
 const states:any={PENDING:['Chờ duyệt','orange'],APPROVED:['Đã duyệt - chờ giao','blue'],REJECTED:['Từ chối','red'],DELIVERED:['Đã giao - chờ nhận','cyan'],COMPLETED:['Hoàn tất','green']}
 export default function TransfersPage(){
@@ -13,7 +13,7 @@ export default function TransfersPage(){
  const {data:equipment=[]}=useQuery({queryKey:['equipment-transfer'],queryFn:()=>api.get(API_ENDPOINTS.EQUIPMENT.BASE,{params:{per_page:500}}).then(r=>r.data.data)})
  const {data:orgs=[]}=useQuery({queryKey:['organizations-list'],queryFn:()=>api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then(r=>r.data.data)})
  const refresh=()=>{qc.invalidateQueries({queryKey:['transfers']});qc.invalidateQueries({queryKey:['equipment']})}
- const create=useMutation({mutationFn:(v:any)=>api.post(API_ENDPOINTS.TRANSFERS.BASE,{...v,requested_date:dayjs(v.requested_date).format('YYYY-MM-DD')}),onSuccess:r=>{message.success(r.data.message);setOpen(false);form.resetFields();refresh()},onError:(e:any)=>message.error(e.response?.data?.message)})
+ const create=useMutation({mutationFn:(v:any)=>api.post(API_ENDPOINTS.TRANSFERS.BASE,{...v,requested_date:dayjs(v.requested_date).format(DATE_TIME_FORMAT.API_DATE)}),onSuccess:r=>{message.success(r.data.message);setOpen(false);form.resetFields();refresh()},onError:(e:any)=>message.error(e.response?.data?.message)})
  const action=useMutation({mutationFn:({id,type,data}:{id:number,type:string,data?:any})=>api.post(`${API_ENDPOINTS.TRANSFERS.BASE}/${id}/${type}`,data),onSuccess:r=>{message.success(r.data.message);refresh()},onError:(e:any)=>message.error(e.response?.data?.message)})
  const reject=(id:number)=>Modal.confirm({title:'Từ chối điều chuyển',content:<Input.TextArea id="reject-note" placeholder="Vui lòng nhập lý do từ chối"/>,onOk:()=>{const notes=(document.getElementById('reject-note') as HTMLTextAreaElement)?.value;if(!notes){message.warning('Nhập lý do từ chối');return Promise.reject()} return action.mutateAsync({id,type:'reject',data:{notes}})}})
  const buttons=(r:any)=><Space wrap>{r.status==='PENDING'&&<><Button type="primary" onClick={()=>action.mutate({id:r.id,type:'approve'})}>Duyệt</Button><Button danger onClick={()=>reject(r.id)}>Từ chối</Button></>}{r.status==='APPROVED'&&<Button type="primary" onClick={()=>action.mutate({id:r.id,type:'handover'})}>Bên giao xác nhận</Button>}{r.status==='DELIVERED'&&<Button type="primary" onClick={()=>action.mutate({id:r.id,type:'complete'})}>Bên nhận hoàn tất</Button>}</Space>

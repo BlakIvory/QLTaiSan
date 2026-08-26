@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../api/axios'
+import { formatDate } from '../../lib/utils'
 import { API_ENDPOINTS } from '../../lib/constants'
 import {
   Wrench, Plus, Search, CheckCircle, Clock,
@@ -179,7 +180,7 @@ export default function RepairsPage() {
                       </span>
                     </td>
                     <td className="text-xs text-slate-500">
-                      {r.start_date ? new Date(r.start_date).toLocaleDateString('vi-VN') : '—'}
+                      {formatDate(r.start_date)}
                     </td>
                     <td className="text-right">
                       <button

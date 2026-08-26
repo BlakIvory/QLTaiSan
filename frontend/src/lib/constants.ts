@@ -64,6 +64,14 @@ export const ROLE_LABELS: Record<string, string> = {
 // Pagination default
 export const PAGE_SIZE = 20
 
+// Central date/time formats used by inputs, API payloads, and displayed values.
+// Change formats here to apply the convention consistently across the app.
+export const DATE_TIME_FORMAT = {
+  DATE: 'DD/MM/YYYY',
+  DATE_TIME: 'DD/MM/YYYY HH:mm:ss',
+  API_DATE: 'YYYY-MM-DD',
+} as const
+
 // File upload constraints
 export const ALLOWED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -150,4 +158,3 @@ export const API_ENDPOINTS = {
     FUNDING_SOURCES: '/funding-sources',
   },
 } as const
-

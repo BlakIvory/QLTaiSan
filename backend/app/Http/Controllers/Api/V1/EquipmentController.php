@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EquipmentController extends Controller
 {
@@ -64,6 +65,8 @@ class EquipmentController extends Controller
     {
         $validated = $request->validate([
             'name'                => 'required|string|max:255',
+            'tracking_mode'       => 'required|in:INDIVIDUAL,QUANTITY',
+            'unit'                => 'required|string|max:50',
             'equipment_type_id'   => 'required|exists:equipment_types,id',
             'asset_code'          => 'nullable|string|max:100',
             'model'               => 'nullable|string|max:100',
@@ -93,6 +96,8 @@ class EquipmentController extends Controller
         // Generate equipment code if not provided
         $code = 'TB-' . date('Y') . '-' . str_pad(Equipment::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
         $validated['equipment_code'] = $code;
+        // Số lượng tồn được ghi nhận khi xác nhận phiếu nhập, không nhập tại hồ sơ thiết bị.
+        $validated['quantity'] = 0;
         $validated['status'] = EquipmentStatus::PENDING_RECEIPT->value;
         $validated['created_by'] = auth()->id();
 
@@ -137,6 +142,8 @@ class EquipmentController extends Controller
 
         $validated = $request->validate([
             'name'                => 'sometimes|string|max:255',
+            'tracking_mode'       => 'sometimes|in:INDIVIDUAL,QUANTITY',
+            'unit'                => 'sometimes|string|max:50',
             'equipment_type_id'   => 'sometimes|exists:equipment_types,id',
             'asset_code'          => 'nullable|string|max:100',
             'model'               => 'nullable|string|max:100',
@@ -168,6 +175,23 @@ class EquipmentController extends Controller
 
     public function destroy(Request $request, Equipment $equipment): JsonResponse
     {
+        $status = $equipment->status instanceof EquipmentStatus ? $equipment->status->value : $equipment->status;
+        if ($status !== EquipmentStatus::PENDING_RECEIPT->value) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể xóa thiết bị đã nhập kho hoặc đã phát sinh sử dụng. Hãy thực hiện quy trình thanh lý nếu cần loại thiết bị khỏi hệ thống.',
+            ], 422);
+        }
+
+        $hasDocuments = DB::table('receipt_items')->where('equipment_id', $equipment->id)->exists()
+            || DB::table('allocation_items')->where('equipment_id', $equipment->id)->exists();
+        if ($hasDocuments) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể xóa thiết bị vì đã nằm trong phiếu nhập hoặc phiếu cấp phát.',
+            ], 422);
+        }
+
         $oldData = $equipment->toArray();
         $equipment->delete();
 

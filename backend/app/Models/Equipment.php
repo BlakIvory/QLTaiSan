@@ -14,7 +14,7 @@ class Equipment extends Model
     protected $table = 'equipment';
 
     protected $fillable = [
-        'equipment_code', 'asset_code', 'name', 'equipment_type_id',
+        'equipment_code', 'tracking_mode', 'quantity', 'unit', 'asset_code', 'name', 'equipment_type_id',
         'model', 'serial', 'manufacturer_id', 'country_id',
         'year_of_manufacture', 'purchase_date', 'in_use_date',
         'original_price', 'current_value', 'funding_source_id',
@@ -41,6 +41,7 @@ class Equipment extends Model
         'current_value'          => 'decimal:2',
         'requires_maintenance'   => 'boolean',
         'requires_inspection'    => 'boolean',
+        'quantity'               => 'integer',
         'status'                 => EquipmentStatus::class,
         'importance_level'       => ImportanceLevel::class,
     ];

@@ -19,6 +19,9 @@ import { useOptions } from '../../hooks/useOptions'
 interface Equipment {
   id: number
   equipment_code: string
+  tracking_mode: 'INDIVIDUAL' | 'QUANTITY'
+  quantity: number
+  unit: string
   asset_code?: string
   name: string
   model?: string
@@ -173,6 +176,7 @@ export default function EquipmentListPage() {
                 <th>Loại thiết bị</th>
                 <th>Khoa / Phòng</th>
                 <th>Model / Serial</th>
+                <th>Số lượng</th>
                 <th>Trạng thái</th>
                 <th>Mức độ quan trọng</th>
                 <th className="text-right">Thao tác</th>
@@ -182,14 +186,14 @@ export default function EquipmentListPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={7}>
+                    <td colSpan={8}>
                       <div className="skeleton h-8 w-full" />
                     </td>
                   </tr>
                 ))
               ) : equipments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400">
+                  <td colSpan={8} className="text-center py-12 text-slate-400">
                     Chưa có thiết bị nào phù hợp với điều kiện tìm kiếm.
                   </td>
                 </tr>
@@ -229,6 +233,10 @@ export default function EquipmentListPage() {
                       <p className="text-xs text-slate-400 font-mono">{eq.serial_number || '—'}</p>
                     </td>
                     <td>
+                      <p className="font-semibold text-slate-800">{eq.quantity ?? 1} {eq.unit || 'Cái'}</p>
+                      <p className="text-xs text-slate-400">{eq.tracking_mode === 'QUANTITY' ? 'Theo số lượng' : 'Riêng lẻ'}</p>
+                    </td>
+                    <td>
                       <span
                         className={`badge ${
                           EQUIPMENT_STATUS_COLORS[eq.status] ?? 'badge-gray'
@@ -259,21 +267,23 @@ export default function EquipmentListPage() {
                           <Edit className="w-4 h-4 text-blue-600" />
                         </Link>
 
-                        <Popconfirm
-                          title="Xác nhận xóa thiết bị"
-                          description={`Bạn có chắc chắn muốn xóa thiết bị "${eq.name}" không?`}
-                          onConfirm={() => deleteMutation.mutate(eq.id)}
-                          okText="Xóa"
-                          cancelText="Hủy"
-                          okButtonProps={{ danger: true }}
-                        >
-                          <button
-                            className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="Xóa thiết bị"
+                        {eq.status === 'PENDING_RECEIPT' && (
+                          <Popconfirm
+                            title="Xác nhận xóa thiết bị"
+                            description={`Bạn có chắc chắn muốn xóa thiết bị "${eq.name}" không?`}
+                            onConfirm={() => deleteMutation.mutate(eq.id)}
+                            okText="Xóa"
+                            cancelText="Hủy"
+                            okButtonProps={{ danger: true }}
                           >
-                            <Trash2 className="w-4 h-4 text-rose-600" />
-                          </button>
-                        </Popconfirm>
+                            <button
+                              className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="Xóa thiết bị"
+                            >
+                              <Trash2 className="w-4 h-4 text-rose-600" />
+                            </button>
+                          </Popconfirm>
+                        )}
                       </div>
                     </td>
                   </tr>

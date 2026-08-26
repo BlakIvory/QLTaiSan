@@ -18,6 +18,7 @@ import {
 } from 'antd'
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { DATE_TIME_FORMAT } from '../../lib/constants'
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
 import { useOptions } from '../../hooks/useOptions'
@@ -32,7 +33,6 @@ export default function EquipmentFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [form] = Form.useForm()
-
   // Fetch Options from Backend
   const { getOptionList } = useOptions(['importance_level'])
   const importanceOptions = getOptionList('importance_level')
@@ -60,6 +60,8 @@ export default function EquipmentFormPage() {
     if (existingEquipment && isEditMode) {
       form.setFieldsValue({
         name: existingEquipment.name,
+        tracking_mode: existingEquipment.tracking_mode || 'INDIVIDUAL',
+        unit: existingEquipment.unit || 'Cái',
         equipment_type_id: existingEquipment.equipment_type_id || existingEquipment.equipment_type?.id,
         asset_code: existingEquipment.asset_code,
         model: existingEquipment.model,
@@ -166,11 +168,20 @@ export default function EquipmentFormPage() {
         onFinish={onFinish}
         initialValues={{
           importance_level: 'MEDIUM',
+          tracking_mode: 'INDIVIDUAL',
+          unit: 'Cái',
           year_of_manufacture: new Date().getFullYear(),
         }}
         size="large"
       >
         <Card title="1. Thông tin chung" style={{ marginBottom: 24 }} className="shadow-xs">
+          <Form.Item
+            label="Mã tài sản cố định"
+            name="asset_code"
+            rules={[{ required: true, message: 'Vui lòng mã tài sản' }]}
+          >
+            <Input placeholder="Vui lòng nhập mã tài sản" />
+          </Form.Item>
           <Form.Item
             label="Tên thiết bị"
             name="name"
@@ -193,9 +204,21 @@ export default function EquipmentFormPage() {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Mã tài sản cố định" name="asset_code">
-            <Input placeholder="Vui lòng nhập mã tài sản" />
+          <Form.Item
+            label="Cách quản lý"
+            name="tracking_mode"
+            rules={[{ required: true }]}
+          >
+            <Select>
+              <Select.Option value="INDIVIDUAL">Theo từng thiết bị (mỗi thiết bị một mã)</Select.Option>
+              <Select.Option value="QUANTITY">Theo số lượng (nhiều thiết bị dùng chung một mã)</Select.Option>
+            </Select>
           </Form.Item>
+
+          <Form.Item label="Đơn vị tính" name="unit" rules={[{ required: true }]}>
+            <Input placeholder="Ví dụ: Cái, Bộ, Chiếc" />
+          </Form.Item>
+
 
           <Form.Item label="Model" name="model">
             <Input placeholder="Vui lòng nhập model" />
@@ -234,11 +257,11 @@ export default function EquipmentFormPage() {
           </Form.Item>
 
           <Form.Item label="Ngày mua" name="purchase_date">
-            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Vui lòng chọn ngày mua" />
+            <DatePicker style={{ width: '100%' }} format={DATE_TIME_FORMAT.DATE} placeholder="Vui lòng chọn ngày mua" />
           </Form.Item>
 
           <Form.Item label="Ngày đưa vào sử dụng" name="in_use_date">
-            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Vui lòng chọn ngày đưa vào sử dụng" />
+            <DatePicker style={{ width: '100%' }} format={DATE_TIME_FORMAT.DATE} placeholder="Vui lòng chọn ngày đưa vào sử dụng" />
           </Form.Item>
 
           <Form.Item label="Nguyên giá (VNĐ)" name="original_price">

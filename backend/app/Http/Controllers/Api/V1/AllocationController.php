@@ -6,6 +6,7 @@ use App\Enums\EquipmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Allocation;
 use App\Models\AllocationItem;
+use App\Models\Equipment;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,8 +32,19 @@ class AllocationController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.equipment_id' => 'required|distinct|exists:equipment,id',
+            'items.*.quantity' => 'required|integer|min:1',
             'items.*.condition_at_handover' => 'nullable|string|max:255',
         ]);
+        foreach ($validated['items'] as $item) {
+            $equipment = Equipment::findOrFail($item['equipment_id']);
+            $status = $equipment->status instanceof EquipmentStatus ? $equipment->status->value : $equipment->status;
+            if ((int) $equipment->organization_id !== (int) $validated['from_organization_id'] || $status !== EquipmentStatus::IN_STOCK->value) {
+                return response()->json(['success' => false, 'message' => "Thiết bị {$equipment->equipment_code} không còn trong kho nguồn."], 422);
+            }
+            if ((int) $item['quantity'] > (int) $equipment->quantity) {
+                return response()->json(['success' => false, 'message' => "Số lượng cấp của {$equipment->equipment_code} vượt tồn kho ({$equipment->quantity} {$equipment->unit})."], 422);
+            }
+        }
         $allocation = DB::transaction(function () use ($validated) {
             $allocation = Allocation::create([
                 'code' => 'CP-' . now()->format('Ym') . '-' . str_pad(Allocation::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT),
@@ -60,6 +72,9 @@ class AllocationController extends Controller
             if ($item->equipment->organization_id !== $allocation->from_organization_id || $status !== EquipmentStatus::IN_STOCK->value) {
                 return response()->json(['success' => false, 'message' => "Thiết bị {$item->equipment->equipment_code} không còn trong kho nguồn."], 422);
             }
+            if ((int) $item->quantity > (int) $item->equipment->quantity) {
+                return response()->json(['success' => false, 'message' => "Số lượng cấp của {$item->equipment->equipment_code} vượt tồn kho ({$item->equipment->quantity} {$item->equipment->unit})."], 422);
+            }
         }
         $allocation->update(['status' => 'CONFIRMED', 'issued_by' => auth()->id()]);
         return response()->json(['success' => true, 'message' => 'Đã xác nhận phiếu cấp phát.', 'data' => $allocation->fresh(['items.equipment', 'fromOrganization', 'toOrganization'])]);
@@ -70,7 +85,29 @@ class AllocationController extends Controller
         if ($allocation->status !== 'CONFIRMED') return response()->json(['success' => false, 'message' => 'Phiếu phải được xác nhận trước khi bàn giao.'], 422);
         $validated = $request->validate(['received_by' => 'nullable|exists:users,id']);
         DB::transaction(function () use ($allocation, $validated) {
-            foreach ($allocation->items as $item) $item->equipment->update(['organization_id' => $allocation->to_organization_id, 'location_id' => null, 'status' => EquipmentStatus::IN_USE->value, 'in_use_date' => now()->toDateString()]);
+            foreach ($allocation->items as $item) {
+                $equipment = Equipment::lockForUpdate()->findOrFail($item->equipment_id);
+                $status = $equipment->status instanceof EquipmentStatus ? $equipment->status->value : $equipment->status;
+                if ((int) $equipment->organization_id !== (int) $allocation->from_organization_id || $status !== EquipmentStatus::IN_STOCK->value || (int) $item->quantity > (int) $equipment->quantity) {
+                    abort(422, "Số lượng thiết bị {$equipment->equipment_code} trong kho không còn đủ để bàn giao.");
+                }
+
+                if ((int) $item->quantity === (int) $equipment->quantity) {
+                    $equipment->update(['organization_id' => $allocation->to_organization_id, 'location_id' => null, 'status' => EquipmentStatus::IN_USE->value, 'in_use_date' => now()->toDateString()]);
+                } else {
+                    $allocatedEquipment = $equipment->replicate();
+                    $allocatedEquipment->equipment_code = $equipment->equipment_code . '-CP' . $allocation->id;
+                    $allocatedEquipment->quantity = $item->quantity;
+                    $allocatedEquipment->organization_id = $allocation->to_organization_id;
+                    $allocatedEquipment->location_id = null;
+                    $allocatedEquipment->status = EquipmentStatus::IN_USE->value;
+                    $allocatedEquipment->in_use_date = now()->toDateString();
+                    $allocatedEquipment->qr_code = null;
+                    $allocatedEquipment->save();
+                    $equipment->decrement('quantity', $item->quantity);
+                    $item->update(['equipment_id' => $allocatedEquipment->id]);
+                }
+            }
             $allocation->update(['status' => 'COMPLETED', 'received_by' => $validated['received_by'] ?? auth()->id()]);
         });
         return response()->json(['success' => true, 'message' => 'Đã bàn giao tài sản cho bộ phận sử dụng.', 'data' => $allocation->fresh(['items.equipment', 'fromOrganization', 'toOrganization'])]);

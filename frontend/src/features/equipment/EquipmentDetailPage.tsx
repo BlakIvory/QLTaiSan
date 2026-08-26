@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../api/axios'
 import { API_ENDPOINTS, EQUIPMENT_STATUS_COLORS, EQUIPMENT_STATUS_LABELS } from '../../lib/constants'
+import { formatDate } from '../../lib/utils'
 import {
   Package, ArrowLeft, Edit, Building, Calendar,
   ShieldCheck, Wrench
@@ -89,6 +90,14 @@ export default function EquipmentDetailPage() {
                 <span className="font-mono text-slate-800">{equipment.serial || equipment.serial_number || '—'}</span>
               </div>
               <div>
+                <span className="text-slate-500 block text-xs">Cách quản lý:</span>
+                <span className="font-medium text-slate-800">{equipment.tracking_mode === 'QUANTITY' ? 'Theo số lượng' : 'Theo từng thiết bị'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-xs">Số lượng:</span>
+                <span className="font-semibold text-primary-700">{equipment.quantity ?? 1} {equipment.unit || 'Cái'}</span>
+              </div>
+              <div>
                 <span className="text-slate-500 block text-xs">Năm sản xuất:</span>
                 <span className="font-medium text-slate-800">{equipment.year_of_manufacture || '—'}</span>
               </div>
@@ -143,11 +152,11 @@ export default function EquipmentDetailPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">Ngày mua:</span>
-                <span className="font-medium text-slate-700">{equipment.purchase_date || '—'}</span>
+                <span className="font-medium text-slate-700">{formatDate(equipment.purchase_date)}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">Đưa vào sử dụng:</span>
-                <span className="font-medium text-slate-700">{equipment.in_use_date || '—'}</span>
+                <span className="font-medium text-slate-700">{formatDate(equipment.in_use_date)}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-500">Hạn bảo hành:</span>
@@ -155,7 +164,7 @@ export default function EquipmentDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Bảo trì tiếp theo:</span>
-                <span className="font-medium text-amber-600">{equipment.next_maintenance_date || '—'}</span>
+                <span className="font-medium text-amber-600">{formatDate(equipment.next_maintenance_date)}</span>
               </div>
             </div>
           </div>

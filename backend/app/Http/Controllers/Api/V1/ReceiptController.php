@@ -6,6 +6,7 @@ use App\Enums\EquipmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Receipt;
 use App\Models\ReceiptItem;
+use App\Models\Equipment;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,18 @@ class ReceiptController extends Controller
             'items.*.condition_note' => 'nullable|string|max:255',
             'items.*.notes' => 'nullable|string',
         ]);
+
+        foreach ($validated['items'] as $item) {
+            $equipment = Equipment::findOrFail($item['equipment_id']);
+            $quantity = (int) ($item['quantity'] ?? 1);
+            $status = $equipment->status instanceof EquipmentStatus ? $equipment->status->value : $equipment->status;
+            if ($status !== EquipmentStatus::PENDING_RECEIPT->value) {
+                return response()->json(['success' => false, 'message' => "Thiết bị {$equipment->equipment_code} không còn ở trạng thái chờ nhập."], 422);
+            }
+            if ($equipment->tracking_mode === 'INDIVIDUAL' && $quantity !== 1) {
+                return response()->json(['success' => false, 'message' => "Thiết bị {$equipment->equipment_code} quản lý riêng lẻ nên số lượng nhập phải bằng 1."], 422);
+            }
+        }
 
         $receipt = DB::transaction(function () use ($validated, $request) {
             $data = collect($validated)->except(['items', 'attachment'])->all();
@@ -94,6 +107,18 @@ class ReceiptController extends Controller
             'items.*.notes' => 'nullable|string',
         ]);
 
+        foreach ($validated['items'] as $item) {
+            $equipment = Equipment::findOrFail($item['equipment_id']);
+            $quantity = (int) ($item['quantity'] ?? 1);
+            $status = $equipment->status instanceof EquipmentStatus ? $equipment->status->value : $equipment->status;
+            if ($status !== EquipmentStatus::PENDING_RECEIPT->value) {
+                return response()->json(['success' => false, 'message' => "Thiết bị {$equipment->equipment_code} không còn ở trạng thái chờ nhập."], 422);
+            }
+            if ($equipment->tracking_mode === 'INDIVIDUAL' && $quantity !== 1) {
+                return response()->json(['success' => false, 'message' => "Thiết bị {$equipment->equipment_code} quản lý riêng lẻ nên số lượng nhập phải bằng 1."], 422);
+            }
+        }
+
         $oldData = $receipt->load('items')->toArray();
         DB::transaction(function () use ($receipt, $validated, $request) {
             $data = collect($validated)->except(['items', 'attachment'])->all();
@@ -115,7 +140,12 @@ class ReceiptController extends Controller
         if ($receipt->status !== 'DRAFT') return response()->json(['success' => false, 'message' => 'Chỉ phiếu nháp mới được xác nhận nhập kho.'], 422);
         DB::transaction(function () use ($receipt) {
             foreach ($receipt->items as $item) {
-                $item->equipment->update(['organization_id' => $receipt->organization_id, 'location_id' => null, 'status' => EquipmentStatus::IN_STOCK->value]);
+                $equipment = Equipment::lockForUpdate()->findOrFail($item->equipment_id);
+                $status = $equipment->status instanceof EquipmentStatus ? $equipment->status->value : $equipment->status;
+                if ($status !== EquipmentStatus::PENDING_RECEIPT->value) {
+                    abort(422, "Thiết bị {$equipment->equipment_code} không còn ở trạng thái chờ nhập.");
+                }
+                $equipment->update(['quantity' => $item->quantity, 'organization_id' => $receipt->organization_id, 'location_id' => null, 'status' => EquipmentStatus::IN_STOCK->value]);
             }
             $receipt->update(['status' => 'CONFIRMED', 'received_by' => auth()->id()]);
         });

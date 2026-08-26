@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
+import { formatDate } from '../../lib/utils'
 import { Calendar, Search, CheckCircle, Clock, AlertTriangle, Eye } from 'lucide-react'
 
 export default function MaintenancePage() {
@@ -74,8 +75,8 @@ export default function MaintenancePage() {
                     </td>
                     <td className="text-sm text-slate-600">{p.equipment?.organization?.name || '—'}</td>
                     <td className="font-mono text-sm font-semibold">{p.cycle_days || 180} ngày</td>
-                    <td className="text-xs text-slate-500">{p.last_maintenance_date || 'Chưa thực hiện'}</td>
-                    <td className="text-xs font-semibold text-slate-800">{p.next_maintenance_date || '—'}</td>
+                    <td className="text-xs text-slate-500">{p.last_maintenance_date ? formatDate(p.last_maintenance_date) : 'Chưa thực hiện'}</td>
+                    <td className="text-xs font-semibold text-slate-800">{formatDate(p.next_maintenance_date)}</td>
                     <td><span className="badge badge-amber">Đã lên lịch</span></td>
                   </tr>
                 ))

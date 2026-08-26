@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../api/axios'
+import { formatDate, formatDateTime } from '../../lib/utils'
 import { API_ENDPOINTS } from '../../lib/constants'
 import {
   AlertTriangle, Plus, Search, CheckCircle, Clock,
@@ -206,7 +207,7 @@ export default function DamageReportsPage() {
                       </span>
                     </td>
                     <td className="text-xs text-slate-500">
-                      {new Date(report.detected_at || report.created_at).toLocaleDateString('vi-VN')}
+                      {formatDate(report.detected_at || report.created_at)}
                     </td>
                     <td className="text-right">
                       <button
@@ -323,7 +324,7 @@ export default function DamageReportsPage() {
                   Chi tiết Báo hỏng #{selectedReport.code}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  {new Date(selectedReport.detected_at || selectedReport.created_at).toLocaleString('vi-VN')}
+                  {formatDateTime(selectedReport.detected_at || selectedReport.created_at)}
                 </p>
               </div>
               <button

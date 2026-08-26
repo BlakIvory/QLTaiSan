@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../api/axios'
+import { formatDateTime } from '../../lib/utils'
 import { API_ENDPOINTS } from '../../lib/constants'
 import { Activity, Search, Shield, User, Globe } from 'lucide-react'
 
@@ -76,7 +77,7 @@ export default function AuditLogsPage() {
                     <td className="text-sm font-semibold text-slate-900">{log.user?.name || 'Hệ thống'}</td>
                     <td className="font-mono text-xs text-slate-500">{log.ip_address || '127.0.0.1'}</td>
                     <td className="text-xs text-slate-500">
-                      {new Date(log.created_at).toLocaleString('vi-VN')}
+                      {formatDateTime(log.created_at)}
                     </td>
                   </tr>
                 ))
