@@ -178,9 +178,9 @@ export default function EquipmentFormPage() {
           <Form.Item
             label="Mã tài sản cố định"
             name="asset_code"
-            rules={[{ required: true, message: 'Vui lòng mã tài sản' }]}
+            extra="Mã tài sản cố định (không bắt buộc)"
           >
-            <Input placeholder="Vui lòng nhập mã tài sản" />
+            <Input placeholder="Nhập mã tài sản cố định nếu có" />
           </Form.Item>
           <Form.Item
             label="Tên thiết bị"

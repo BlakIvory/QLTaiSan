@@ -11,6 +11,7 @@ use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ReceiptController extends Controller
 {
@@ -123,6 +124,11 @@ class ReceiptController extends Controller
         DB::transaction(function () use ($receipt, $validated, $request) {
             $data = collect($validated)->except(['items', 'attachment'])->all();
             if ($request->hasFile('attachment')) {
+                // Xóa file đính kèm cũ khỏi storage trước khi lưu mới
+                if ($receipt->attachment_path) {
+                    $oldPath = str_replace('/storage/', '', $receipt->attachment_path);
+                    Storage::disk('public')->delete($oldPath);
+                }
                 $file = $request->file('attachment');
                 $data['attachment_path'] = '/storage/' . $file->store('receipts', 'public');
                 $data['attachment_name'] = $file->getClientOriginalName();
@@ -156,6 +162,11 @@ class ReceiptController extends Controller
     public function uploadAttachment(Request $request, Receipt $receipt): JsonResponse
     {
         $request->validate(['attachment' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        // Xóa file cũ khỏi storage
+        if ($receipt->attachment_path) {
+            $oldPath = str_replace('/storage/', '', $receipt->attachment_path);
+            Storage::disk('public')->delete($oldPath);
+        }
         $file = $request->file('attachment');
         $receipt->update(['attachment_path' => '/storage/' . $file->store('receipts', 'public'), 'attachment_name' => $file->getClientOriginalName()]);
         return response()->json(['success' => true, 'message' => 'Đã tải chứng từ.', 'data' => $receipt]);

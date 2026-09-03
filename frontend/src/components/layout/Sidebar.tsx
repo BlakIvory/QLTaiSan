@@ -5,7 +5,8 @@ import {
   ArrowRightLeft, Wrench, ShieldCheck, Calendar, Stethoscope,
   HandshakeIcon, FileText, Users, Settings, AlertTriangle,
   Building2, ChevronRight, BookOpen, BarChart3, Trash2,
-  RotateCcw, LogOut, Layers, Network, Sliders, Shield
+  RotateCcw, LogOut, Layers, Network, Sliders, Shield,
+  ShoppingCart, FileSpreadsheet, Send
 } from 'lucide-react'
 
 interface NavItem {
@@ -70,6 +71,29 @@ const navSections: NavSection[] = [
         to: '/transfers',
         roles: ['admin', 'pvtttby', 'leader'],
         permissions: ['equipment.transfer'],
+      },
+    ],
+  },
+  {
+    title: 'Đề xuất & Mua sắm',
+    items: [
+      {
+        label: 'Đề nghị mua tài sản',
+        icon: ShoppingCart,
+        to: '/purchase-requests',
+        roles: ['admin', 'pvtttby', 'department_staff', 'leader'],
+      },
+      {
+        label: 'Tổng hợp đề nghị',
+        icon: FileSpreadsheet,
+        to: '/purchase-summaries',
+        roles: ['admin', 'pvtttby', 'leader'],
+      },
+      {
+        label: 'Tờ trình chủ trương (BGĐ)',
+        icon: Send,
+        to: '/proposals',
+        roles: ['admin', 'pvtttby', 'leader'],
       },
     ],
   },

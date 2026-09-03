@@ -93,7 +93,18 @@ class AllocationController extends Controller
                 }
 
                 if ((int) $item->quantity === (int) $equipment->quantity) {
+                    $oldOrgId = $equipment->organization_id;
                     $equipment->update(['organization_id' => $allocation->to_organization_id, 'location_id' => null, 'status' => EquipmentStatus::IN_USE->value, 'in_use_date' => now()->toDateString()]);
+                    // Ghi lịch sử vị trí
+                    $equipment->locationHistories()->create([
+                        'from_organization_id' => $oldOrgId,
+                        'to_organization_id'   => $allocation->to_organization_id,
+                        'from_location_id'     => null,
+                        'to_location_id'       => null,
+                        'reason'               => 'cap_phat',
+                        'changed_by'           => auth()->id(),
+                        'changed_at'           => now(),
+                    ]);
                 } else {
                     $allocatedEquipment = $equipment->replicate();
                     $allocatedEquipment->equipment_code = $equipment->equipment_code . '-CP' . $allocation->id;
@@ -106,6 +117,16 @@ class AllocationController extends Controller
                     $allocatedEquipment->save();
                     $equipment->decrement('quantity', $item->quantity);
                     $item->update(['equipment_id' => $allocatedEquipment->id]);
+                    // Ghi lịch sử vị trí cho thiết bị mới tách
+                    $allocatedEquipment->locationHistories()->create([
+                        'from_organization_id' => $allocation->from_organization_id,
+                        'to_organization_id'   => $allocation->to_organization_id,
+                        'from_location_id'     => null,
+                        'to_location_id'       => null,
+                        'reason'               => 'cap_phat',
+                        'changed_by'           => auth()->id(),
+                        'changed_at'           => now(),
+                    ]);
                 }
             }
             $allocation->update(['status' => 'COMPLETED', 'received_by' => $validated['received_by'] ?? auth()->id()]);

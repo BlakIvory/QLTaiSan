@@ -157,4 +157,13 @@ export const API_ENDPOINTS = {
     COUNTRIES: '/countries',
     FUNDING_SOURCES: '/funding-sources',
   },
+  PURCHASE_REQUESTS: {
+    BASE: '/purchase-requests',
+  },
+  PURCHASE_SUMMARIES: {
+    BASE: '/purchase-request-summaries',
+  },
+  PROPOSALS: {
+    BASE: '/proposal-documents',
+  },
 } as const

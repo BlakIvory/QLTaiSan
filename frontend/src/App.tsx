@@ -31,6 +31,9 @@ const Users         = lazy(() => import('./features/users/UsersPage'))
 const Roles         = lazy(() => import('./features/roles/RolesPage'))
 const AuditLogs     = lazy(() => import('./features/audit-logs/AuditLogsPage'))
 const NotFound      = lazy(() => import('./features/NotFoundPage'))
+const PurchaseRequests  = lazy(() => import('./features/purchase-requests/PurchaseRequestsPage'))
+const PurchaseSummaries = lazy(() => import('./features/purchase-summaries/PurchaseSummariesPage'))
+const Proposals         = lazy(() => import('./features/proposals/ProposalsPage'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[400px]">
@@ -86,6 +89,11 @@ export default function App() {
 
                 {/* Reports */}
                 <Route path="/reports" element={<Reports />} />
+
+                {/* Quy trình 2: Đề nghị mua tài sản */}
+                <Route path="/purchase-requests/*"  element={<PurchaseRequests />} />
+                <Route path="/purchase-summaries/*" element={<PurchaseSummaries />} />
+                <Route path="/proposals/*"          element={<Proposals />} />
 
                 {/* Categories */}
                 <Route path="/categories/organizations" element={<CategoriesOrgs />} />

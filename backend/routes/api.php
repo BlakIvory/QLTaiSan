@@ -19,6 +19,9 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\OptionController;
+use App\Http\Controllers\Api\V1\PurchaseRequestController;
+use App\Http\Controllers\Api\V1\PurchaseRequestSummaryController;
+use App\Http\Controllers\Api\V1\ProposalDocumentController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public routes ─────────────────────────────────────────────────
@@ -185,6 +188,24 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/repair-costs',              [ReportController::class, 'repairCosts']);
     Route::get('reports/maintenance-summary',       [ReportController::class, 'maintenanceSummary']);
     Route::get('reports/export',                    [ReportController::class, 'export']);
+
+    // ─── Quy trình 2: Đề nghị mua tài sản ─────────────────────────
+    // Đề nghị mua (cá nhân/khoa)
+    Route::apiResource('purchase-requests', PurchaseRequestController::class);
+    Route::post('purchase-requests/{purchaseRequest}/submit', [PurchaseRequestController::class, 'submit']);
+    Route::post('purchase-requests/{purchaseRequest}/recall', [PurchaseRequestController::class, 'recall']);
+
+    // Bảng tổng hợp đề nghị mua (phòng tổng hợp)
+    Route::apiResource('purchase-request-summaries', PurchaseRequestSummaryController::class);
+    Route::post('purchase-request-summaries/{purchaseRequestSummary}/add-requests',    [PurchaseRequestSummaryController::class, 'addRequests']);
+    Route::delete('purchase-request-summaries/{purchaseRequestSummary}/requests/{purchaseRequest}', [PurchaseRequestSummaryController::class, 'removeRequest']);
+    Route::post('purchase-request-summaries/{purchaseRequestSummary}/finalize',        [PurchaseRequestSummaryController::class, 'finalize']);
+
+    // Tờ trình chủ trương (trình BGĐ)
+    Route::apiResource('proposal-documents', ProposalDocumentController::class);
+    Route::post('proposal-documents/{proposalDocument}/submit',  [ProposalDocumentController::class, 'submit']);
+    Route::post('proposal-documents/{proposalDocument}/approve', [ProposalDocumentController::class, 'approve']);
+    Route::post('proposal-documents/{proposalDocument}/reject',  [ProposalDocumentController::class, 'reject']);
 
     // ─── Admin only ────────────────────────────────────────────────
     Route::middleware('role:admin')->group(function () {

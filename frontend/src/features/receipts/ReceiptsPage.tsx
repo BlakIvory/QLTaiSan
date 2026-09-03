@@ -22,7 +22,20 @@ export default function ReceiptsPage() {
   const confirm = useMutation({ mutationFn: (id: number) => api.post(`${API_ENDPOINTS.RECEIPTS.BASE}/${id}/confirm`), onSuccess: r => { message.success(r.data.message); refresh() }, onError: (e: any) => message.error(e.response?.data?.message) })
   const remove = useMutation({ mutationFn: (id: number) => api.delete(`${API_ENDPOINTS.RECEIPTS.BASE}/${id}`), onSuccess: r => { message.success(r.data.message); refresh() }, onError: (e: any) => message.error(e.response?.data?.message) })
   const deleteReceipt = (r: any) => Modal.confirm({ title: 'Xóa phiếu nhập?', content: `Phiếu ${r.code} sẽ bị xóa và không thể khôi phục.`, okText: 'Xóa', cancelText: 'Hủy', okButtonProps: { danger: true }, onOk: () => remove.mutateAsync(r.id) })
-  const openCreate = () => { setEditing(undefined); setFile(undefined); form.resetFields(); form.setFieldsValue({ invoice_date: dayjs(), receipt_date: dayjs() }); setOpen(true) }
+  const openCreate = () => {
+    const materialWarehouse = orgs.find((org: any) =>
+      ['P-VAT-TU', 'P-VT-TTBYT', 'P-CSVC'].includes(org.code) || org.type === 'WAREHOUSE'
+    )
+    setEditing(undefined)
+    setFile(undefined)
+    form.resetFields()
+    form.setFieldsValue({
+      invoice_date: dayjs(),
+      receipt_date: dayjs(),
+      organization_id: materialWarehouse?.id,
+    })
+    setOpen(true)
+  }
   const openEdit = (r: any) => { setEditing(r); setFile(undefined); form.setFieldsValue({ supplier_id: r.supplier_id, contract_number: r.contract_number, invoice_number: r.invoice_number, invoice_date: r.invoice_date ? dayjs(r.invoice_date) : null, receipt_date: r.receipt_date ? dayjs(r.receipt_date) : null, organization_id: r.organization_id, total_amount: r.total_amount ? Number(r.total_amount) : null, notes: r.notes, equipment_ids: r.items?.map((x: any) => x.equipment_id) || [], equipment_quantities: Object.fromEntries((r.items ?? []).map((x: any) => [x.equipment_id, x.quantity])) }); setOpen(true) }
   const columns: any[] = [
     { title: 'Mã phiếu', dataIndex: 'code' }, { title: 'Hóa đơn', render: (_: any, r: any) => <><b>{r.invoice_number}</b><div className="text-xs text-slate-500">{formatDate(r.invoice_date)}</div></> },
@@ -32,7 +45,7 @@ export default function ReceiptsPage() {
     {
       title: 'Thao tác', width: 330, render: (_: any, r: any) => <Space wrap>
         <Button icon={<EyeOutlined />} onClick={() => setDetail(r)}>Chi tiết</Button>
-        {r.attachment_path && <Button icon={<FileTextOutlined />} onClick={() => window.open(`http://localhost:8000${r.attachment_path}`, '_blank')}>Chứng từ</Button>}
+        {r.attachment_path && <Button icon={<FileTextOutlined />} onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${r.attachment_path}`, '_blank')}>Chứng từ</Button>}
         {r.status === 'DRAFT' && <><Button icon={<EditOutlined />} onClick={() => openEdit(r)}>Sửa</Button><Button type="primary" onClick={() => confirm.mutate(r.id)}>Xác nhận nhập kho</Button><Button danger icon={<DeleteOutlined />} onClick={() => deleteReceipt(r)}>Xóa</Button></>}
       </Space>
     },

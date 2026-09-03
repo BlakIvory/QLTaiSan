@@ -39,16 +39,16 @@ class AssetLifecycleWorkflowTest extends TestCase
         $deptB = Organization::create(['code' => 'B', 'name' => 'Khoa B', 'type' => 'DEPARTMENT', 'is_active' => true]);
         $group = EquipmentGroup::create(['code' => 'G', 'name' => 'Nhóm', 'is_active' => true]);
         $type = EquipmentType::create(['code' => 'T', 'name' => 'Loại', 'equipment_group_id' => $group->id, 'is_active' => true]);
-        $equipment = Equipment::create(['equipment_code' => 'TB-TEST', 'name' => 'Máy thử', 'equipment_type_id' => $type->id, 'organization_id' => $warehouse->id, 'status' => 'PENDING_RECEIPT', 'importance_level' => 'MEDIUM']);
+        $equipment = Equipment::create(['equipment_code' => 'TB-TEST', 'name' => 'Khăn tắm', 'tracking_mode' => 'QUANTITY', 'quantity' => 10, 'unit' => 'Cái', 'equipment_type_id' => $type->id, 'organization_id' => $warehouse->id, 'status' => 'PENDING_RECEIPT', 'importance_level' => 'MEDIUM']);
 
         $receiptId = $this->postJson('/api/v1/receipts', [
             'invoice_number' => 'HD-001', 'invoice_date' => '2026-08-18', 'receipt_date' => '2026-08-18',
-            'organization_id' => $warehouse->id, 'items' => [['equipment_id' => $equipment->id, 'quantity' => 1, 'unit' => 'Cái']],
+            'organization_id' => $warehouse->id, 'items' => [['equipment_id' => $equipment->id, 'quantity' => 10, 'unit' => 'Cái']],
         ])->assertCreated()->json('data.id');
         $this->assertSame('PENDING_RECEIPT', $equipment->fresh()->status->value);
         $this->putJson("/api/v1/receipts/{$receiptId}", [
             'invoice_number' => 'HD-001-UPDATED', 'invoice_date' => '2026-08-18', 'receipt_date' => '2026-08-18',
-            'organization_id' => $warehouse->id, 'items' => [['equipment_id' => $equipment->id, 'quantity' => 1, 'unit' => 'Cái']],
+            'organization_id' => $warehouse->id, 'items' => [['equipment_id' => $equipment->id, 'quantity' => 10, 'unit' => 'Cái']],
         ])->assertOk()->assertJsonPath('data.invoice_number', 'HD-001-UPDATED');
         $this->postJson("/api/v1/receipts/{$receiptId}/confirm")->assertOk();
         $this->assertSame('IN_STOCK', $equipment->fresh()->status->value);
@@ -59,24 +59,30 @@ class AssetLifecycleWorkflowTest extends TestCase
 
         $allocationId = $this->postJson('/api/v1/allocations', [
             'from_organization_id' => $warehouse->id, 'to_organization_id' => $deptA->id,
-            'allocation_date' => '2026-08-18', 'items' => [['equipment_id' => $equipment->id]],
+            'allocation_date' => '2026-08-18', 'items' => [['equipment_id' => $equipment->id, 'quantity' => 2]],
         ])->assertCreated()->json('data.id');
         $this->assertSame($warehouse->id, $equipment->fresh()->organization_id);
         $this->postJson("/api/v1/allocations/{$allocationId}/confirm")->assertOk();
         $this->assertSame($warehouse->id, $equipment->fresh()->organization_id);
-        $this->postJson("/api/v1/allocations/{$allocationId}/handover")->assertOk();
-        $this->assertSame($deptA->id, $equipment->fresh()->organization_id);
+        $allocatedEquipmentId = $this->postJson("/api/v1/allocations/{$allocationId}/handover")
+            ->assertOk()
+            ->assertJsonPath('data.items.0.equipment.quantity', 2)
+            ->assertJsonPath('data.items.0.equipment.organization_id', $deptA->id)
+            ->json('data.items.0.equipment.id');
+        $this->assertSame(8, $equipment->fresh()->quantity);
+        $this->assertSame($warehouse->id, $equipment->fresh()->organization_id);
+        $allocatedEquipment = Equipment::findOrFail($allocatedEquipmentId);
 
         $transferId = $this->postJson('/api/v1/transfers', [
-            'equipment_id' => $equipment->id, 'to_organization_id' => $deptB->id,
+            'equipment_id' => $allocatedEquipment->id, 'to_organization_id' => $deptB->id,
             'reason' => 'Điều chuyển sử dụng', 'requested_date' => '2026-08-18',
         ])->assertCreated()->json('data.id');
-        $this->assertSame($deptA->id, $equipment->fresh()->organization_id);
+        $this->assertSame($deptA->id, $allocatedEquipment->fresh()->organization_id);
         $this->postJson("/api/v1/transfers/{$transferId}/approve")->assertOk();
         $this->postJson("/api/v1/transfers/{$transferId}/handover")->assertOk();
-        $this->assertSame($deptA->id, $equipment->fresh()->organization_id);
+        $this->assertSame($deptA->id, $allocatedEquipment->fresh()->organization_id);
         $this->postJson("/api/v1/transfers/{$transferId}/complete")->assertOk();
-        $this->assertSame($deptB->id, $equipment->fresh()->organization_id);
-        $this->assertSame('IN_USE', $equipment->fresh()->status->value);
+        $this->assertSame($deptB->id, $allocatedEquipment->fresh()->organization_id);
+        $this->assertSame('IN_USE', $allocatedEquipment->fresh()->status->value);
     }
 }

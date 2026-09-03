@@ -56,3 +56,8 @@ export function formatDateTime(value?: string | Date | null): string {
 export function formatApiDate(value: string | Date): string {
   return dayjs(value).format(DATE_TIME_FORMAT.API_DATE)
 }
+
+export function formatCurrency(value?: number | string | null): string {
+  if (value == null) return '—'
+  return `${Number(value).toLocaleString('vi-VN')} ₫`
+}

@@ -27,6 +27,7 @@ class TransferController extends Controller
     {
         $validated = $request->validate(['equipment_id' => 'required|exists:equipment,id', 'to_organization_id' => 'required|exists:organizations,id', 'to_location_id' => 'nullable|exists:locations,id', 'reason' => 'required|string', 'requested_date' => 'required|date', 'notes' => 'nullable|string']);
         $equipment = Equipment::findOrFail($validated['equipment_id']);
+        if (!$equipment->organization_id) return $this->invalidState('Tài sản chưa có đơn vị đang thụ hưởng nên không thể điều chuyển.');
         if ((int) $equipment->organization_id === (int) $validated['to_organization_id']) return $this->invalidState('Bộ phận đích phải khác bộ phận hiện tại.');
         if (Transfer::where('equipment_id', $equipment->id)->whereIn('status', ['PENDING', 'APPROVED', 'DELIVERED'])->exists()) return $this->invalidState('Thiết bị đang có một phiếu điều chuyển chưa hoàn tất.');
         $transfer = Transfer::create([
@@ -68,7 +69,18 @@ class TransferController extends Controller
         if ($transfer->status !== 'DELIVERED') return $this->invalidState('Tài sản phải được bàn giao trước khi bên nhận xác nhận.');
         DB::transaction(function () use ($transfer) {
             $transfer->equipment->update(['organization_id' => $transfer->to_organization_id, 'location_id' => $transfer->to_location_id, 'status' => EquipmentStatus::IN_USE->value]);
-            $transfer->update(['status' => 'COMPLETED', 'received_by' => auth()->id(), 'executed_date' => now()->toDateString()]);
+            // Ghi lịch sử vị trí
+            $transfer->equipment->locationHistories()->create([
+                'from_organization_id' => $transfer->from_organization_id,
+                'to_organization_id'   => $transfer->to_organization_id,
+                'from_location_id'     => $transfer->from_location_id,
+                'to_location_id'       => $transfer->to_location_id,
+                'reason'               => 'dieu_chuyen',
+                'changed_by'           => auth()->id(),
+                'changed_at'           => now(),
+            ]);
+            // completed_date là ngày bên nhận xác nhận, khác executed_date (ngày bên giao)
+            $transfer->update(['status' => 'COMPLETED', 'received_by' => auth()->id(), 'completed_date' => now()->toDateString()]);
         });
         $this->auditLog->log('COMPLETE', 'transfer', $transfer->id, ['organization_id' => $transfer->from_organization_id], ['organization_id' => $transfer->to_organization_id], $request);
         return response()->json(['success' => true, 'message' => 'Đã hoàn tất điều chuyển và cập nhật bộ phận quản lý.', 'data' => $transfer->fresh($this->relations)]);
