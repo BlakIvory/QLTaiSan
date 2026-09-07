@@ -25,12 +25,35 @@ class Organization extends Model
             if ($org->parent_id) {
                 $parent = Organization::find($org->parent_id);
                 if ($parent) {
-                    $org->level = $parent->level + 1;
-                    $org->path = $parent->path ? "{$parent->path}/{$org->id}" : "/{$parent->id}/{$org->id}";
+                    $org->level = ($parent->level ?? 0) + 1;
+                    $parentPath = rtrim($parent->path ?? "/{$parent->id}", '/');
+                    $org->path = $org->id ? "{$parentPath}/{$org->id}" : $parentPath;
                 }
             } else {
                 $org->level = 0;
-                $org->path = "/{$org->id}";
+                $org->path = $org->id ? "/{$org->id}" : "/";
+            }
+        });
+
+        static::created(function ($org) {
+            // Khi tạo mới, sau khi MySQL sinh ID tự tăng, cập nhật lại path chính xác
+            $parentPath = '';
+            if ($org->parent_id) {
+                $parent = Organization::find($org->parent_id);
+                $parentPath = $parent ? rtrim($parent->path, '/') : '';
+            }
+            $org->path = "{$parentPath}/{$org->id}";
+            $org->saveQuietly();
+        });
+
+        static::updated(function ($org) {
+            // Nếu đổi parent_id, cập nhật đệ quy cho các đơn vị con
+            if ($org->wasChanged('parent_id') || $org->wasChanged('path')) {
+                foreach ($org->children as $child) {
+                    $child->path = rtrim($org->path, '/') . "/{$child->id}";
+                    $child->level = $org->level + 1;
+                    $child->saveQuietly();
+                }
             }
         });
     }

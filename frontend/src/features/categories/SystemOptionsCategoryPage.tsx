@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Table } from 'antd'
 import { useOptions } from '../../hooks/useOptions'
-import { Sliders, Search, CheckCircle, ShieldAlert, Tag, Code, RefreshCw } from 'lucide-react'
+import { Sliders, Search, ShieldAlert, RefreshCw } from 'lucide-react'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 export default function SystemOptionsCategoryPage() {
   const { options, isLoading, refetch } = useOptions()
@@ -105,36 +107,37 @@ export default function SystemOptionsCategoryPage() {
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Mã hằng số (Value / Enum)</th>
-                  <th className="py-3 px-4">Nhãn hiển thị (Label)</th>
-                  <th className="py-3 px-4">Màu định dạng (Badge Color)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredList.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-medium text-primary-700 text-xs">
-                      {item.value}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">
-                      {item.label}
-                    </td>
-                    <td className="py-3 px-4">
-                      {item.color ? (
-                        <span className={`badge badge-${item.color}`}>
-                          {item.color}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <Table
+              rowKey="value"
+              loading={isLoading}
+              dataSource={filteredList}
+              columns={[
+                {
+                  title: 'Mã hằng số (Value / Enum)',
+                  dataIndex: 'value',
+                  key: 'value',
+                  render: (val: string) => <span className="font-mono font-medium text-primary-700 text-xs">{val}</span>,
+                },
+                {
+                  title: 'Nhãn hiển thị (Label)',
+                  dataIndex: 'label',
+                  key: 'label',
+                  render: (label: string) => <span className="font-medium text-slate-800">{label}</span>,
+                },
+                {
+                  title: 'Màu định dạng (Badge Color)',
+                  dataIndex: 'color',
+                  key: 'color',
+                  render: (color?: string) =>
+                    color ? (
+                      <span className={`badge badge-${color}`}>{color}</span>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    ),
+                },
+              ]}
+              pagination={DEFAULT_TABLE_PAGINATION}
+            />
           </div>
         </div>
       </div>

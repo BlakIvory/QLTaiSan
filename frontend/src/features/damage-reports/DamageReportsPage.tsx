@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Table } from 'antd'
 import api from '../../api/axios'
 import { formatDate, formatDateTime } from '../../lib/utils'
 import { API_ENDPOINTS } from '../../lib/constants'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 import {
   AlertTriangle, Plus, Search, CheckCircle, Clock,
   UserCheck, SlidersHorizontal, Eye, Wrench
@@ -139,91 +141,78 @@ export default function DamageReportsPage() {
 
       {/* Reports Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Mã báo hỏng</th>
-                <th>Thiết bị sự cố</th>
-                <th>Khoa / Phòng</th>
-                <th>Mô tả sự cố</th>
-                <th>Mức ưu tiên</th>
-                <th>Trạng thái</th>
-                <th>Ngày báo</th>
-                <th className="text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={8}>
-                      <div className="skeleton h-8 w-full" />
-                    </td>
-                  </tr>
-                ))
-              ) : !reports?.length ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-400">
-                    Chưa có báo hỏng nào.
-                  </td>
-                </tr>
-              ) : (
-                reports.map((report) => (
-                  <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="font-mono text-xs font-bold text-slate-800">
-                      {report.code}
-                    </td>
-                    <td>
-                      <p className="font-semibold text-slate-900 text-sm">
-                        {report.equipment?.name ?? '—'}
-                      </p>
-                      <p className="text-xs text-slate-400 font-mono">
-                        {report.equipment?.equipment_code}
-                      </p>
-                    </td>
-                    <td className="text-sm text-slate-600">
-                      {report.organization?.name ?? '—'}
-                    </td>
-                    <td className="text-sm text-slate-700 max-w-xs truncate">
-                      {report.description}
-                    </td>
-                    <td>
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          PRIORITY_LABELS[report.priority]?.class ?? ''
-                        }`}
-                      >
-                        {PRIORITY_LABELS[report.priority]?.label ?? report.priority}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          STATUS_LABELS[report.status]?.class ?? 'badge-gray'
-                        }`}
-                      >
-                        {STATUS_LABELS[report.status]?.label ?? report.status}
-                      </span>
-                    </td>
-                    <td className="text-xs text-slate-500">
-                      {formatDate(report.detected_at || report.created_at)}
-                    </td>
-                    <td className="text-right">
-                      <button
-                        onClick={() => setSelectedReport(report)}
-                        className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          rowKey="id"
+          loading={isLoading}
+          dataSource={reports || []}
+          columns={[
+            {
+              title: 'Mã báo hỏng',
+              dataIndex: 'code',
+              key: 'code',
+              render: (code: string) => <span className="font-mono text-xs font-bold text-slate-800">{code}</span>,
+            },
+            {
+              title: 'Thiết bị sự cố',
+              key: 'equipment',
+              render: (_: any, r: DamageReport) => (
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm">{r.equipment?.name ?? '—'}</p>
+                  <p className="text-xs text-slate-400 font-mono">{r.equipment?.equipment_code}</p>
+                </div>
+              ),
+            },
+            {
+              title: 'Khoa / Phòng',
+              key: 'organization',
+              render: (_: any, r: DamageReport) => <span className="text-sm text-slate-600">{r.organization?.name ?? '—'}</span>,
+            },
+            {
+              title: 'Mô tả sự cố',
+              dataIndex: 'description',
+              key: 'description',
+              render: (desc: string) => <span className="text-sm text-slate-700 max-w-xs block truncate">{desc}</span>,
+            },
+            {
+              title: 'Mức ưu tiên',
+              key: 'priority',
+              render: (_: any, r: DamageReport) => (
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${PRIORITY_LABELS[r.priority]?.class ?? ''}`}>
+                  {PRIORITY_LABELS[r.priority]?.label ?? r.priority}
+                </span>
+              ),
+            },
+            {
+              title: 'Trạng thái',
+              key: 'status',
+              render: (_: any, r: DamageReport) => (
+                <span className={`badge ${STATUS_LABELS[r.status]?.class ?? 'badge-gray'}`}>
+                  {STATUS_LABELS[r.status]?.label ?? r.status}
+                </span>
+              ),
+            },
+            {
+              title: 'Ngày báo',
+              key: 'date',
+              render: (_: any, r: DamageReport) => <span className="text-xs text-slate-500">{formatDate(r.detected_at || r.created_at)}</span>,
+            },
+            {
+              title: 'Thao tác',
+              key: 'actions',
+              align: 'right' as const,
+              render: (_: any, report: DamageReport) => (
+                <button
+                  onClick={() => setSelectedReport(report)}
+                  className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Xem chi tiết"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              ),
+            },
+          ]}
+          pagination={DEFAULT_TABLE_PAGINATION}
+        />
       </div>
 
       {/* Modal: Create Damage Report */}

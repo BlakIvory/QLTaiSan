@@ -110,6 +110,10 @@ class ProposalDocumentController extends Controller
     /** BGĐ phê duyệt (SUBMITTED → APPROVED) */
     public function approve(Request $request, ProposalDocument $proposalDocument): JsonResponse
     {
+        if (!$request->user()->hasAnyRole(['leader', 'admin'])) {
+            return response()->json(['success' => false, 'message' => 'Chỉ Ban Giám đốc hoặc Quản trị viên mới có quyền phê duyệt tờ trình.'], 403);
+        }
+
         if ($proposalDocument->status !== 'SUBMITTED') {
             return response()->json(['success' => false, 'message' => 'Tờ trình phải ở trạng thái Đã trình mới có thể phê duyệt.'], 422);
         }
@@ -127,6 +131,10 @@ class ProposalDocumentController extends Controller
     /** BGĐ từ chối (SUBMITTED → REJECTED) */
     public function reject(Request $request, ProposalDocument $proposalDocument): JsonResponse
     {
+        if (!$request->user()->hasAnyRole(['leader', 'admin'])) {
+            return response()->json(['success' => false, 'message' => 'Chỉ Ban Giám đốc hoặc Quản trị viên mới có quyền từ chối tờ trình.'], 403);
+        }
+
         if ($proposalDocument->status !== 'SUBMITTED') {
             return response()->json(['success' => false, 'message' => 'Tờ trình phải ở trạng thái Đã trình mới có thể từ chối.'], 422);
         }

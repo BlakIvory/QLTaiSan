@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Modal, Popconfirm, message } from 'antd'
+import { Modal, Popconfirm, Table, message } from 'antd'
 import api from '../../api/axios'
 import { API_ENDPOINTS, ORGANIZATION_TYPE_LABELS } from '../../lib/constants'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 import {
   Building2, Plus, Search, Edit, Trash2, CheckCircle2,
   XCircle, Filter, X, Save
@@ -186,109 +187,106 @@ export default function OrganizationsCategoryPage() {
 
       {/* Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4">Mã đơn vị</th>
-                <th className="py-3 px-4">Tên đơn vị / Khoa / Phòng</th>
-                <th className="py-3 px-4">Loại đơn vị</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
-                    Đang tải danh sách Khoa/Phòng...
-                  </td>
-                </tr>
-              ) : filteredOrgs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
-                    Chưa có dữ liệu phù hợp.
-                  </td>
-                </tr>
-              ) : (
-                filteredOrgs.map((org) => (
-                  <tr key={org.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-medium text-slate-700">{org.code}</td>
-                    <td className="py-3 px-4 font-medium text-slate-800">{org.name}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                        {ORGANIZATION_TYPE_LABELS[org.type] ?? org.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      {org.is_active ? (
-                        <span className="badge badge-green inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Hoạt động
-                        </span>
-                      ) : (
-                        <span className="badge badge-gray inline-flex items-center gap-1">
-                          <XCircle className="w-3 h-3" /> Tạm ngừng
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleOpenModal(org)}
-                          className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            Modal.confirm({
-                              title: org.is_active ? 'Xác nhận khóa đơn vị' : 'Xác nhận mở lại đơn vị',
-                              content: org.is_active
-                                ? `Bạn có chắc chắn muốn khóa đơn vị "${org.name}" không?`
-                                : `Bạn có chắc chắn muốn mở lại đơn vị "${org.name}" không?`,
-                              okText: 'Xác nhận',
-                              cancelText: 'Hủy',
-                              okButtonProps: { type: 'primary' },
-                              onOk() {
-                                toggleMutation.mutate(org.id)
-                              },
-                            })
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            org.is_active
-                              ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
-                              : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
-                          }`}
-                          title={org.is_active ? 'Khóa đơn vị' : 'Mở lại đơn vị'}
-                        >
-                          {org.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                        </button>
-
-                        <Popconfirm
-                          title="Xác nhận xóa Khoa/Phòng"
-                          description={`Bạn có chắc chắn muốn xóa đơn vị "${org.name}" không?`}
-                          onConfirm={() => deleteMutation.mutate(org.id)}
-                          okText="Xóa"
-                          cancelText="Hủy"
-                          okButtonProps={{ danger: true }}
-                        >
-                          <button
-                            className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="Xóa đơn vị"
-                          >
-                            <Trash2 className="w-4 h-4 text-rose-600" />
-                          </button>
-                        </Popconfirm>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          rowKey="id"
+          loading={isLoading}
+          dataSource={filteredOrgs}
+          columns={[
+            {
+              title: 'Mã đơn vị',
+              dataIndex: 'code',
+              key: 'code',
+              render: (code: string) => <span className="font-mono font-medium text-slate-700">{code}</span>,
+            },
+            {
+              title: 'Tên đơn vị / Khoa / Phòng',
+              dataIndex: 'name',
+              key: 'name',
+              render: (name: string) => <span className="font-medium text-slate-800">{name}</span>,
+            },
+            {
+              title: 'Loại đơn vị',
+              dataIndex: 'type',
+              key: 'type',
+              render: (type: string) => (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                  {ORGANIZATION_TYPE_LABELS[type] ?? type}
+                </span>
+              ),
+            },
+            {
+              title: 'Trạng thái',
+              key: 'is_active',
+              render: (_: any, org: Organization) =>
+                org.is_active ? (
+                  <span className="badge badge-green inline-flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Hoạt động
+                  </span>
+                ) : (
+                  <span className="badge badge-gray inline-flex items-center gap-1">
+                    <XCircle className="w-3 h-3" /> Tạm ngừng
+                  </span>
+                ),
+            },
+            {
+              title: 'Thao tác',
+              key: 'actions',
+              align: 'right' as const,
+              render: (_: any, org: Organization) => (
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => handleOpenModal(org)}
+                    className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      Modal.confirm({
+                        title: org.is_active ? 'Xác nhận khóa đơn vị' : 'Xác nhận mở lại đơn vị',
+                        content: org.is_active
+                          ? `Bạn có chắc chắn muốn khóa đơn vị "${org.name}" không?`
+                          : `Bạn có chắc chắn muốn mở lại đơn vị "${org.name}" không?`,
+                        okText: 'Xác nhận',
+                        cancelText: 'Hủy',
+                        okButtonProps: { type: 'primary' },
+                        onOk() {
+                          toggleMutation.mutate(org.id)
+                        },
+                      })
+                    }}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      org.is_active
+                        ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                        : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
+                    }`}
+                    title={org.is_active ? 'Khóa đơn vị' : 'Mở lại đơn vị'}
+                  >
+                    {org.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                  </button>
+                  <Popconfirm
+                    title="Xác nhận xóa Khoa/Phòng"
+                    description={`Bạn có chắc chắn muốn xóa đơn vị "${org.name}" không?`}
+                    onConfirm={() => deleteMutation.mutate(org.id)}
+                    okText="Xóa"
+                    cancelText="Hủy"
+                    okButtonProps={{ danger: true }}
+                  >
+                    <button
+                      className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                      title="Xóa đơn vị"
+                    >
+                      <Trash2 className="w-4 h-4 text-rose-600" />
+                    </button>
+                  </Popconfirm>
+                </div>
+              ),
+            },
+          ]}
+          pagination={DEFAULT_TABLE_PAGINATION}
+        />
+      </div>
       </div>
 
       {/* Modal Add / Edit */}
@@ -362,7 +360,7 @@ export default function OrganizationsCategoryPage() {
                 >
                   <option value="">-- Trực thuộc Bệnh viện (Cấp cao nhất) --</option>
                   {(organizations ?? [])
-                    .filter((o) => o.id !== editingOrg?.id)
+                    .filter((o) => o.id !== editingOrg?.id && o.type !== 'HOSPITAL')
                     .map((o) => (
                       <option key={o.id} value={o.id}>
                         {o.name} ({ORGANIZATION_TYPE_LABELS[o.type] ?? o.type})

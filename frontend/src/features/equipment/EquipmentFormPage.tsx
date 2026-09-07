@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useOrganizations } from '../../hooks/useOrganizations'
 import {
   Form,
   Input,
@@ -43,11 +44,8 @@ export default function EquipmentFormPage() {
     queryFn: () => api.get('/equipment-types').then((r) => r.data.data ?? r.data),
   })
 
-  // Fetch Organizations
-  const { data: organizations } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: () => api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then((r) => r.data.data),
-  })
+  // Fetch Organizations (loại trừ cấp Bệnh viện)
+  const { orgs: organizations } = useOrganizations()
 
   // Fetch Equipment Data if Edit Mode
   const { data: existingEquipment, isLoading: isLoadingEquipment } = useQuery({
@@ -180,7 +178,7 @@ export default function EquipmentFormPage() {
             name="asset_code"
             extra="Mã tài sản cố định (không bắt buộc)"
           >
-            <Input placeholder="Nhập mã tài sản cố định nếu có" />
+            <Input placeholder="Vui lòng nhập mã tài sản cố định" />
           </Form.Item>
           <Form.Item
             label="Tên thiết bị"
@@ -215,8 +213,8 @@ export default function EquipmentFormPage() {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Đơn vị tính" name="unit" rules={[{ required: true }]}>
-            <Input placeholder="Ví dụ: Cái, Bộ, Chiếc" />
+          <Form.Item label="Đơn vị tính" name="unit" rules={[{ required: true, message: 'Vui lòng nhập đơn vị tính' }]}>
+            <Input placeholder="Vui lòng nhập đơn vị tính" />
           </Form.Item>
 
 

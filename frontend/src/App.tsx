@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthContext'
-import { PrivateRoute, PublicRoute } from './routes/Guards'
+import { PrivateRoute, PublicRoute, RoleRoute } from './routes/Guards'
 import AppLayout from './components/layout/AppLayout'
 import LoginPage from './features/auth/LoginPage'
 import { lazy, Suspense } from 'react'
@@ -101,9 +101,11 @@ export default function App() {
                 <Route path="/categories/system-options" element={<CategoriesOptions />} />
 
                 {/* Admin */}
-                <Route path="/users/*"      element={<Users />} />
-                <Route path="/roles/*"      element={<Roles />} />
-                <Route path="/audit-logs"   element={<AuditLogs />} />
+                <Route element={<RoleRoute roles={['admin']} />}>
+                  <Route path="/users/*"      element={<Users />} />
+                  <Route path="/roles/*"      element={<Roles />} />
+                  <Route path="/audit-logs"   element={<AuditLogs />} />
+                </Route>
               </Route>
             </Route>
 

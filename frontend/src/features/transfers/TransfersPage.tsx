@@ -6,6 +6,8 @@ import { PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import api from '../../api/axios'
 import { API_ENDPOINTS, DATE_TIME_FORMAT } from '../../lib/constants'
+import { useOrganizations } from '../../hooks/useOrganizations'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 const states: any = { PENDING: ['Chờ duyệt', 'orange'], APPROVED: ['Đã duyệt - chờ giao', 'blue'], REJECTED: ['Từ chối', 'red'], DELIVERED: ['Đã giao - chờ nhận', 'cyan'], COMPLETED: ['Hoàn tất', 'green'] }
 
@@ -17,7 +19,7 @@ export default function TransfersPage() {
   const [form] = Form.useForm()
   const { data = [], isLoading } = useQuery({ queryKey: ['transfers', search], queryFn: () => api.get(API_ENDPOINTS.TRANSFERS.BASE, { params: { search } }).then(r => r.data.data) })
   const { data: equipment = [] } = useQuery({ queryKey: ['equipment-transfer'], queryFn: () => api.get(API_ENDPOINTS.EQUIPMENT.BASE, { params: { per_page: 500 } }).then(r => r.data.data) })
-  const { data: orgs = [] } = useQuery({ queryKey: ['organizations-list'], queryFn: () => api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then(r => r.data.data) })
+  const { orgOptions } = useOrganizations()
   const selectedEquipment = equipment.find((item: any) => item.id === selectedEquipmentId)
   const sourceOrganization = selectedEquipment?.organization
   const refresh = () => { qc.invalidateQueries({ queryKey: ['transfers'] }); qc.invalidateQueries({ queryKey: ['equipment'] }) }
@@ -45,19 +47,19 @@ export default function TransfersPage() {
   ]
   return <div className="space-y-5">
     <div className="flex justify-between"><div><h1 className="page-title">Luân chuyển tài sản</h1><p className="page-subtitle">Yêu cầu → phê duyệt → bàn giao → bên nhận xác nhận</p></div><Button type="primary" icon={<PlusOutlined />} onClick={() => { form.setFieldsValue({ requested_date: dayjs() }); setOpen(true) }}>Tạo yêu cầu</Button></div>
-    <Card><Input.Search placeholder="Vui lòng nhập mã phiếu hoặc tài sản" onSearch={setSearch} /><Table className="mt-4" rowKey="id" loading={isLoading} dataSource={data} columns={columns} /></Card>
+    <Card><Input.Search placeholder="Vui lòng nhập mã phiếu hoặc tài sản" onSearch={setSearch} /><Table className="mt-4" rowKey="id" loading={isLoading} dataSource={data} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} /></Card>
     <Modal title="Tạo yêu cầu điều chuyển" open={open} onCancel={closeForm} onOk={() => form.submit()} confirmLoading={create.isPending}>
       <Form form={form} layout="vertical" onFinish={values => create.mutate(values)}>
-        <Form.Item name="equipment_id" label="Tài sản" rules={[{ required: true }]}>
-          <Select showSearch optionFilterProp="label" placeholder="Chọn tài sản cần điều chuyển" onChange={(id: number) => { setSelectedEquipmentId(id); form.setFieldValue('to_organization_id', undefined) }} options={equipment.filter((item: any) => item.organization_id).map((item: any) => ({ value: item.id, label: `${item.equipment_code} - ${item.name} (${item.organization?.name})` }))} />
+        <Form.Item name="equipment_id" label="Tài sản" rules={[{ required: true, message: 'Vui lòng chọn tài sản' }]}>
+          <Select showSearch optionFilterProp="label" placeholder="Vui lòng chọn tài sản cần điều chuyển" onChange={(id: number) => { setSelectedEquipmentId(id); form.setFieldValue('to_organization_id', undefined) }} options={equipment.filter((item: any) => item.organization_id).map((item: any) => ({ value: item.id, label: `${item.equipment_code} - ${item.name} (${item.organization?.name})` }))} />
         </Form.Item>
         <Form.Item label="Đơn vị đang thụ hưởng"><Input value={sourceOrganization?.name || ''} placeholder="Sẽ tự động xác định khi chọn tài sản" disabled /></Form.Item>
-        <Form.Item name="to_organization_id" label="Đơn vị nhận" rules={[{ required: true }]}>
-          <Select showSearch optionFilterProp="label" disabled={!sourceOrganization} placeholder={sourceOrganization ? 'Chọn đơn vị nhận' : 'Vui lòng chọn tài sản trước'} options={orgs.filter((org: any) => org.id !== sourceOrganization?.id).map((org: any) => ({ value: org.id, label: org.name }))} />
+        <Form.Item name="to_organization_id" label="Đơn vị nhận" rules={[{ required: true, message: 'Vui lòng chọn đơn vị nhận' }]}>
+          <Select showSearch optionFilterProp="label" disabled={!sourceOrganization} placeholder={sourceOrganization ? 'Vui lòng chọn đơn vị nhận' : 'Vui lòng chọn tài sản trước'} options={orgOptions.filter((o) => o.value !== sourceOrganization?.id)} />
         </Form.Item>
-        <Form.Item name="requested_date" label="Ngày yêu cầu" rules={[{ required: true }]}><DatePicker className="w-full" /></Form.Item>
-        <Form.Item name="reason" label="Lý do" rules={[{ required: true }]}><Input.TextArea /></Form.Item>
-        <Form.Item name="notes" label="Ghi chú"><Input.TextArea /></Form.Item>
+        <Form.Item name="requested_date" label="Ngày yêu cầu" rules={[{ required: true, message: 'Vui lòng chọn ngày yêu cầu' }]}><DatePicker className="w-full" placeholder="Vui lòng chọn ngày yêu cầu" /></Form.Item>
+        <Form.Item name="reason" label="Lý do" rules={[{ required: true, message: 'Vui lòng nhập lý do' }]}><Input.TextArea placeholder="Vui lòng nhập lý do" /></Form.Item>
+        <Form.Item name="notes" label="Ghi chú"><Input.TextArea placeholder="Vui lòng nhập ghi chú" /></Form.Item>
       </Form>
     </Modal>
   </div>

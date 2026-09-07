@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button, Card, DatePicker, Form, Input, InputNumber,
@@ -10,6 +10,9 @@ import dayjs from 'dayjs'
 import api from '../../api/axios'
 import { API_ENDPOINTS, DATE_TIME_FORMAT } from '../../lib/constants'
 import { formatDate } from '../../lib/utils'
+import { useOrganizations } from '../../hooks/useOrganizations'
+import { useAuth } from '../auth/AuthContext'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 const statusMap: Record<string, [string, string]> = {
   DRAFT:        ['Nháp', 'default'],
@@ -27,6 +30,7 @@ const priorityMap: Record<string, [string, string]> = {
 
 export default function PurchaseRequestsPage() {
   const qc = useQueryClient()
+  const { user, hasRole } = useAuth()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<any>()
   const [detail, setDetail] = useState<any>()
@@ -37,10 +41,55 @@ export default function PurchaseRequestsPage() {
     queryKey: ['purchase-requests', search],
     queryFn: () => api.get(API_ENDPOINTS.PURCHASE_REQUESTS.BASE, { params: { search } }).then(r => r.data.data),
   })
-  const { data: orgs = [] } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: () => api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then(r => r.data.data),
+  const { orgs } = useOrganizations()
+  // Lấy danh mục nhóm thiết bị do Quản trị viên (Admin) cấu hình trong hệ thống
+  const { data: dbGroups = [] } = useQuery({
+    queryKey: ['equipment-groups-all'],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.CATEGORIES.EQUIPMENT_GROUPS)
+        .then(r => (Array.isArray(r.data?.data) ? r.data.data : Array.isArray(r.data) ? r.data : [])),
   })
+
+  // Lấy trực tiếp danh sách nhóm thiết bị từ danh mục Admin quản trị
+  const categoryOptions = useMemo(() => {
+    const list = dbGroups
+      .filter((g: any) => g.is_active !== false)
+      .map((g: any) => ({
+        value: g.name,
+        label: g.name,
+      }))
+
+    if (editing?.category && !list.some((opt: any) => opt.value === editing.category)) {
+      list.unshift({ value: editing.category, label: editing.category })
+    }
+    return list
+  }, [dbGroups, editing])
+
+  // Chỉ lấy những khoa/phòng thuộc tài khoản của người dùng (Admin được chọn tất cả)
+  const userOrgs = useMemo(() => {
+    if (!user) return []
+    if (hasRole('admin')) {
+      return orgs.filter((o: any) => o.type !== 'HOSPITAL')
+    }
+    if (user.organization && user.organization.type !== 'HOSPITAL') {
+      const userOrgId = user.organization.id
+      const filtered = orgs.filter((o: any) => o.id === userOrgId || o.parent_id === userOrgId)
+      return filtered.length > 0 ? filtered : [user.organization]
+    }
+    return orgs.filter((o: any) => o.type !== 'HOSPITAL')
+  }, [user, orgs, hasRole])
+
+  const selectOptions = useMemo(() => {
+    const list = [...userOrgs]
+    if (editing?.organization && !list.some((o: any) => o.id === editing.organization.id)) {
+      list.push(editing.organization)
+    }
+    return list.map((o: any) => ({
+      value: o.id,
+      label: o.name + (o.code ? ` (${o.code})` : ''),
+    }))
+  }, [userOrgs, editing])
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['purchase-requests'] })
 
@@ -73,9 +122,25 @@ export default function PurchaseRequestsPage() {
   const openCreate = () => {
     setEditing(undefined)
     form.resetFields()
-    form.setFieldsValue({ priority: 'NORMAL', quantity: 1, unit: 'Cái' })
+    const defaultOrgId = user?.organization?.id || (userOrgs.length === 1 ? userOrgs[0].id : undefined)
+    form.setFieldsValue({
+      priority: 'NORMAL',
+      quantity: 1,
+      unit: 'Cái',
+      organization_id: defaultOrgId,
+    })
     setOpen(true)
   }
+
+  // Tự động chọn khoa/phòng khi form tạo mới mở và user/userOrgs sẵn sàng
+  useEffect(() => {
+    if (open && !editing && !form.getFieldValue('organization_id')) {
+      const defaultOrgId = user?.organization?.id || (userOrgs.length === 1 ? userOrgs[0].id : undefined)
+      if (defaultOrgId) {
+        form.setFieldValue('organization_id', defaultOrgId)
+      }
+    }
+  }, [open, editing, userOrgs, user, form])
 
   const openEdit = (r: any) => {
     setEditing(r)
@@ -147,10 +212,10 @@ export default function PurchaseRequestsPage() {
 
       <Card>
         <Input.Search
-          placeholder="Tìm theo mã hoặc tên tài sản đề nghị"
+          placeholder="Vui lòng nhập mã hoặc tên tài sản đề nghị"
           onSearch={setSearch} allowClear className="mb-4"
         />
-        <Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} />
+        <Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} />
       </Card>
 
       {/* Modal tạo/sửa */}
@@ -164,16 +229,30 @@ export default function PurchaseRequestsPage() {
       >
         <Form form={form} layout="vertical" onFinish={v => save.mutate(v)}>
           <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="organization_id" label="Khoa / Phòng đề nghị" rules={[{ required: true }]} className="col-span-2">
-              <Select showSearch optionFilterProp="label"
-                options={orgs.map((o: any) => ({ value: o.id, label: o.name }))}
-                placeholder="Chọn khoa/phòng" />
+            <Form.Item
+              name="organization_id"
+              label="Khoa / Phòng đề nghị"
+              rules={[{ required: true, message: 'Vui lòng chọn khoa/phòng đề nghị' }]}
+              className="col-span-2"
+            >
+              <Select
+                showSearch
+                optionFilterProp="label"
+                options={selectOptions}
+                placeholder="Vui lòng chọn khoa/phòng"
+              />
             </Form.Item>
-            <Form.Item name="item_name" label="Tên tài sản / thiết bị đề nghị mua" rules={[{ required: true }]} className="col-span-2">
-              <Input placeholder="Ví dụ: Máy thở HAMILTON-C6" />
+            <Form.Item name="item_name" label="Tên tài sản / thiết bị đề nghị mua" rules={[{ required: true, message: 'Vui lòng nhập tên tài sản' }]} className="col-span-2">
+              <Input placeholder="Vui lòng nhập tên tài sản / thiết bị đề nghị mua" />
             </Form.Item>
             <Form.Item name="category" label="Nhóm thiết bị">
-              <Input placeholder="Ví dụ: Trang thiết bị y tế" />
+              <Select
+                showSearch
+                allowClear
+                optionFilterProp="label"
+                placeholder="Vui lòng chọn nhóm thiết bị"
+                options={categoryOptions}
+              />
             </Form.Item>
             <Form.Item name="priority" label="Mức độ ưu tiên">
               <Select options={[
@@ -181,30 +260,31 @@ export default function PurchaseRequestsPage() {
                 { value: 'NORMAL', label: 'Bình thường' },
                 { value: 'HIGH', label: 'Cao' },
                 { value: 'URGENT', label: 'Khẩn cấp' },
-              ]} />
+              ]} placeholder="Vui lòng chọn mức độ ưu tiên" />
             </Form.Item>
-            <Form.Item name="quantity" label="Số lượng" rules={[{ required: true }]}>
-              <InputNumber min={1} precision={0} className="w-full" />
+            <Form.Item name="quantity" label="Số lượng" rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}>
+              <InputNumber min={1} precision={0} className="w-full" placeholder="Vui lòng nhập số lượng" />
             </Form.Item>
             <Form.Item name="unit" label="Đơn vị tính">
-              <Input placeholder="Cái, Bộ, Chiếc..." />
+              <Input placeholder="Vui lòng nhập đơn vị tính" />
             </Form.Item>
             <Form.Item name="estimated_price" label="Đơn giá ước tính (VNĐ)">
               <InputNumber<number>
                 min={0} precision={0} className="w-full"
+                placeholder="Vui lòng nhập đơn giá ước tính"
                 formatter={v => `${v ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                 parser={v => Number(v?.replace(/\./g, '') || 0)}
               />
             </Form.Item>
             <Form.Item name="needed_by" label="Ngày cần có">
-              <DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} />
+              <DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} placeholder="Vui lòng chọn ngày cần có" />
             </Form.Item>
           </div>
-          <Form.Item name="reason" label="Lý do / Mục đích đề nghị" rules={[{ required: true }]}>
-            <Input.TextArea rows={3} placeholder="Nêu rõ lý do cần mua, tình trạng thiết bị hiện tại..." />
+          <Form.Item name="reason" label="Lý do / Mục đích đề nghị" rules={[{ required: true, message: 'Vui lòng nhập lý do / mục đích đề nghị' }]}>
+            <Input.TextArea rows={3} placeholder="Vui lòng nhập lý do / mục đích đề nghị" />
           </Form.Item>
           <Form.Item name="specifications" label="Yêu cầu kỹ thuật / Thông số">
-            <Input.TextArea rows={2} placeholder="Mô tả thông số kỹ thuật cần thiết (không bắt buộc)" />
+            <Input.TextArea rows={2} placeholder="Vui lòng nhập yêu cầu kỹ thuật / thông số" />
           </Form.Item>
         </Form>
       </Modal>
@@ -222,11 +302,12 @@ export default function PurchaseRequestsPage() {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Tên tài sản" span={2}>{detail.item_name}</Descriptions.Item>
+            <Descriptions.Item label="Nhóm thiết bị">{detail.category || '—'}</Descriptions.Item>
+            <Descriptions.Item label="Khoa/Phòng">{detail.organization?.name}</Descriptions.Item>
             <Descriptions.Item label="Số lượng">{detail.quantity} {detail.unit}</Descriptions.Item>
             <Descriptions.Item label="Đơn giá ước tính">
               {detail.estimated_price ? `${Number(detail.estimated_price).toLocaleString('vi-VN')} ₫` : '—'}
             </Descriptions.Item>
-            <Descriptions.Item label="Khoa/Phòng">{detail.organization?.name}</Descriptions.Item>
             <Descriptions.Item label="Người đề nghị">{detail.requester?.name}</Descriptions.Item>
             <Descriptions.Item label="Mức ưu tiên">
               <Tag color={(priorityMap[detail.priority] || ['', 'default'])[1]}>

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Table, Tag } from 'antd'
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
 import { formatDate } from '../../lib/utils'
-import { Calendar, Search, CheckCircle, Clock, AlertTriangle, Eye } from 'lucide-react'
+import { Calendar, Search } from 'lucide-react'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 export default function MaintenancePage() {
   const [search, setSearch] = useState('')
@@ -12,6 +14,47 @@ export default function MaintenancePage() {
     queryKey: ['maintenance-plans', search],
     queryFn: () => api.get(API_ENDPOINTS.MAINTENANCE.PLANS, { params: { search } }).then((r) => r.data.data),
   })
+
+  const columns = [
+    {
+      title: 'Thiết bị',
+      key: 'equipment',
+      render: (_: any, p: any) => (
+        <div>
+          <p className="font-semibold text-slate-900 text-sm">{p.equipment?.name}</p>
+          <p className="text-xs text-slate-400 font-mono">{p.equipment?.equipment_code}</p>
+        </div>
+      ),
+    },
+    {
+      title: 'Khoa / Phòng',
+      key: 'organization',
+      render: (_: any, p: any) => <span className="text-sm text-slate-600">{p.equipment?.organization?.name || '—'}</span>,
+    },
+    {
+      title: 'Chu kỳ (Ngày)',
+      dataIndex: 'cycle_days',
+      key: 'cycle_days',
+      render: (days: number) => <span className="font-mono text-sm font-semibold">{days || 180} ngày</span>,
+    },
+    {
+      title: 'Lần bảo trì gần nhất',
+      dataIndex: 'last_maintenance_date',
+      key: 'last_maintenance_date',
+      render: (d: string) => <span className="text-xs text-slate-500">{d ? formatDate(d) : 'Chưa thực hiện'}</span>,
+    },
+    {
+      title: 'Lần bảo trì tiếp theo',
+      dataIndex: 'next_maintenance_date',
+      key: 'next_maintenance_date',
+      render: (d: string) => <span className="text-xs font-semibold text-slate-800">{formatDate(d)}</span>,
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      render: () => <Tag color="warning">Đã lên lịch</Tag>,
+    },
+  ]
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -43,47 +86,13 @@ export default function MaintenancePage() {
 
       {/* Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Thiết bị</th>
-                <th>Khoa / Phòng</th>
-                <th>Chu kỳ (Ngày)</th>
-                <th>Lần bảo trì gần nhất</th>
-                <th>Lần bảo trì tiếp theo</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i}><td colSpan={6}><div className="skeleton h-8 w-full" /></td></tr>
-                ))
-              ) : !plans?.length ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400">
-                    Hiện tại tất cả thiết bị đều tuân thủ lịch bảo trì.
-                  </td>
-                </tr>
-              ) : (
-                plans.map((p: any) => (
-                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                    <td>
-                      <p className="font-semibold text-slate-900 text-sm">{p.equipment?.name}</p>
-                      <p className="text-xs text-slate-400 font-mono">{p.equipment?.equipment_code}</p>
-                    </td>
-                    <td className="text-sm text-slate-600">{p.equipment?.organization?.name || '—'}</td>
-                    <td className="font-mono text-sm font-semibold">{p.cycle_days || 180} ngày</td>
-                    <td className="text-xs text-slate-500">{p.last_maintenance_date ? formatDate(p.last_maintenance_date) : 'Chưa thực hiện'}</td>
-                    <td className="text-xs font-semibold text-slate-800">{formatDate(p.next_maintenance_date)}</td>
-                    <td><span className="badge badge-amber">Đã lên lịch</span></td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          rowKey="id"
+          loading={isLoading}
+          dataSource={plans || []}
+          columns={columns}
+          pagination={DEFAULT_TABLE_PAGINATION}
+        />
       </div>
     </div>
   )

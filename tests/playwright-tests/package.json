@@ -1,0 +1,12 @@
+{
+  "name": "qltaisan-ui-tests",
+  "version": "1.0.0",
+  "description": "Kiểm thử UI tự động cho hệ thống QLTAISAN",
+  "scripts": {
+    "test": "node run-tests.js",
+    "install-browsers": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}

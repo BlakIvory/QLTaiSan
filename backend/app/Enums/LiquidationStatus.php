@@ -12,7 +12,7 @@ enum LiquidationStatus: string
     public function label(): string
     {
         return match($this) {
-            self::PENDING   => 'Chờ phê duyệt',
+            self::PENDING   => 'Chờ thanh lý',
             self::APPROVED  => 'Đã phê duyệt',
             self::REJECTED  => 'Đã từ chối',
             self::COMPLETED => 'Hoàn thành',

@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Table, Tag } from 'antd'
 import api from '../../api/axios'
 import { formatDateTime } from '../../lib/utils'
 import { API_ENDPOINTS } from '../../lib/constants'
-import { Activity, Search, Shield, User, Globe } from 'lucide-react'
+import { Activity, Search } from 'lucide-react'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
+
+const actionColors: Record<string, string> = {
+  LOGIN: 'green',
+  CREATE: 'blue',
+  UPDATE: 'orange',
+  DELETE: 'red',
+}
 
 export default function AuditLogsPage() {
   const [search, setSearch] = useState('')
@@ -12,6 +21,40 @@ export default function AuditLogsPage() {
     queryKey: ['audit-logs', search],
     queryFn: () => api.get(API_ENDPOINTS.AUDIT_LOGS.BASE, { params: { search } }).then((r) => r.data.data),
   })
+
+  const columns = [
+    {
+      title: 'Hành động',
+      dataIndex: 'action',
+      key: 'action',
+      render: (action: string) => (
+        <Tag color={actionColors[action] || 'default'}>{action}</Tag>
+      ),
+    },
+    {
+      title: 'Module',
+      dataIndex: 'module',
+      key: 'module',
+      render: (module: string) => <span className="font-mono text-xs text-slate-700">{module}</span>,
+    },
+    {
+      title: 'Người thực hiện',
+      key: 'user',
+      render: (_: any, r: any) => <span className="text-sm font-semibold text-slate-900">{r.user?.name || 'Hệ thống'}</span>,
+    },
+    {
+      title: 'Địa chỉ IP',
+      dataIndex: 'ip_address',
+      key: 'ip_address',
+      render: (ip: string) => <span className="font-mono text-xs text-slate-500">{ip || '127.0.0.1'}</span>,
+    },
+    {
+      title: 'Thời gian',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date: string) => <span className="text-xs text-slate-500">{formatDateTime(date)}</span>,
+    },
+  ]
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -39,52 +82,13 @@ export default function AuditLogsPage() {
       </div>
 
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Hành động</th>
-                <th>Module</th>
-                <th>Người thực hiện</th>
-                <th>Địa chỉ IP</th>
-                <th>Thời gian</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}><td colSpan={5}><div className="skeleton h-8 w-full" /></td></tr>
-                ))
-              ) : !logs?.length ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-slate-400">
-                    Chưa có nhật ký hoạt động nào.
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log: any) => (
-                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                    <td>
-                      <span className={`badge ${
-                        log.action === 'LOGIN' ? 'badge-green' :
-                        log.action === 'CREATE' ? 'badge-blue' :
-                        log.action === 'UPDATE' ? 'badge-yellow' : 'badge-gray'
-                      }`}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="font-mono text-xs text-slate-700">{log.module}</td>
-                    <td className="text-sm font-semibold text-slate-900">{log.user?.name || 'Hệ thống'}</td>
-                    <td className="font-mono text-xs text-slate-500">{log.ip_address || '127.0.0.1'}</td>
-                    <td className="text-xs text-slate-500">
-                      {formatDateTime(log.created_at)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          rowKey="id"
+          loading={isLoading}
+          dataSource={logs || []}
+          columns={columns}
+          pagination={DEFAULT_TABLE_PAGINATION}
+        />
       </div>
     </div>
   )

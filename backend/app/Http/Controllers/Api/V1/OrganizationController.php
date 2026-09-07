@@ -28,6 +28,11 @@ class OrganizationController extends Controller
             $query->where('is_active', $request->boolean('active'));
         }
 
+        // Loại trừ các type không muốn hiện trong combobox (vd: exclude_type=HOSPITAL)
+        if ($excludeType = $request->input('exclude_type')) {
+            $query->where('type', '!=', $excludeType);
+        }
+
         $organizations = $query->orderBy('name')->get();
 
         return response()->json([

@@ -45,6 +45,21 @@ class PurchaseRequestController extends Controller
             'needed_by'        => 'nullable|date',
         ]);
 
+        $user = $request->user();
+        if ($user && !$user->hasRole('admin') && $user->organization_id) {
+            $allowedOrgIds = \App\Models\Organization::where('id', $user->organization_id)
+                ->orWhere('parent_id', $user->organization_id)
+                ->pluck('id')
+                ->toArray();
+
+            if (!in_array((int)$validated['organization_id'], $allowedOrgIds, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn chỉ được lập đề nghị cho khoa/phòng thuộc tài khoản của bạn.',
+                ], 403);
+            }
+        }
+
         $validated['code']       = 'DM-' . now()->format('Ym') . '-' . str_pad(PurchaseRequest::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
         $validated['status']     = 'DRAFT';
         $validated['requester_id'] = auth()->id();

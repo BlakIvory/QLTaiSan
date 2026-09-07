@@ -10,6 +10,7 @@ import dayjs from 'dayjs'
 import api from '../../api/axios'
 import { API_ENDPOINTS, DATE_TIME_FORMAT } from '../../lib/constants'
 import { formatDate, formatCurrency } from '../../lib/utils'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 const statusMap: Record<string, [string, string]> = {
   DRAFT:            ['Nháp', 'default'],
@@ -107,7 +108,7 @@ export default function PurchaseSummariesPage() {
       </div>
 
       <Card>
-        <Table rowKey="id" loading={isLoading} dataSource={summaries} columns={columns} />
+        <Table rowKey="id" loading={isLoading} dataSource={summaries} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} />
       </Card>
 
       {/* Modal lập bảng tổng hợp */}
@@ -122,18 +123,18 @@ export default function PurchaseSummariesPage() {
       >
         <Form form={form} layout="vertical" onFinish={v => create.mutate(v)}>
           <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="title" label="Tiêu đề bảng tổng hợp" rules={[{ required: true }]} className="col-span-2">
-              <Input placeholder="Ví dụ: Tổng hợp đề nghị mua TTBYT Quý IV/2026" />
+            <Form.Item name="title" label="Tiêu đề bảng tổng hợp" rules={[{ required: true, message: 'Vui lòng nhập tiêu đề bảng tổng hợp' }]} className="col-span-2">
+              <Input placeholder="Vui lòng nhập tiêu đề bảng tổng hợp" />
             </Form.Item>
             <Form.Item name="period" label="Kỳ tổng hợp">
-              <Input placeholder="Q4/2026, T10/2026..." />
+              <Input placeholder="Vui lòng nhập kỳ tổng hợp" />
             </Form.Item>
-            <Form.Item name="summary_date" label="Ngày lập" rules={[{ required: true }]}>
-              <DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} />
+            <Form.Item name="summary_date" label="Ngày lập" rules={[{ required: true, message: 'Vui lòng chọn ngày lập' }]}>
+              <DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} placeholder="Vui lòng chọn ngày lập" />
             </Form.Item>
           </div>
           <Form.Item name="notes" label="Ghi chú">
-            <Input.TextArea rows={2} />
+            <Input.TextArea rows={2} placeholder="Vui lòng nhập ghi chú" />
           </Form.Item>
 
           <div className="mb-2 font-medium">Chọn đề nghị mua để tổng hợp:</div>
@@ -144,9 +145,10 @@ export default function PurchaseSummariesPage() {
                 targetKeys={selectedRequestIds}
                 onChange={keys => setSelectedRequestIds(keys as string[])}
                 render={item => item.title ?? ''}
-                listStyle={{ width: '100%', height: 260 }}
+                listStyle={{ flex: 1, height: 260 }}
                 titles={['Đề nghị chờ tổng hợp', 'Đã chọn vào bảng TH']}
                 showSearch
+                style={{ width: '100%' }}
               />
           }
           {selectedRequestIds.length > 0 && (

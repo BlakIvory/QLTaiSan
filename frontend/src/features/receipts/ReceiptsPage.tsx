@@ -7,32 +7,32 @@ import dayjs from 'dayjs'
 import api from '../../api/axios'
 import { API_ENDPOINTS, DATE_TIME_FORMAT } from '../../lib/constants'
 import { formatDate } from '../../lib/utils'
+import { useAuth } from '../auth/AuthContext'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 const status = { DRAFT: ['Chờ nhập kho', 'orange'], CONFIRMED: ['Đã nhập kho', 'green'] } as Record<string, [string, string]>
 
 export default function ReceiptsPage() {
+  const { user } = useAuth()
   const qc = useQueryClient(); const [open, setOpen] = useState(false); const [editing, setEditing] = useState<any>(); const [detail, setDetail] = useState<any>(); const [search, setSearch] = useState(''); const [file, setFile] = useState<any>(); const [form] = Form.useForm()
   const selectedEquipmentIds: number[] = Form.useWatch('equipment_ids', form) ?? []
   const { data = [], isLoading } = useQuery({ queryKey: ['receipts', search], queryFn: () => api.get(API_ENDPOINTS.RECEIPTS.BASE, { params: { search } }).then(r => r.data.data) })
   const { data: equipment = [] } = useQuery({ queryKey: ['equipment-receipt'], queryFn: () => api.get(API_ENDPOINTS.EQUIPMENT.BASE, { params: { per_page: 500, status: 'PENDING_RECEIPT' } }).then(r => r.data.data) })
   const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: () => api.get(API_ENDPOINTS.SUPPLIERS.BASE).then(r => r.data.data) })
-  const { data: orgs = [] } = useQuery({ queryKey: ['organizations-list'], queryFn: () => api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then(r => r.data.data) })
   const refresh = () => { qc.invalidateQueries({ queryKey: ['receipts'] }); qc.invalidateQueries({ queryKey: ['equipment'] }); qc.invalidateQueries({ queryKey: ['equipment-receipt'] }) }
   const save = useMutation({ mutationFn: (v: any) => { const fd = new FormData();['supplier_id', 'contract_number', 'invoice_number', 'organization_id', 'total_amount', 'notes'].forEach(k => v[k] != null && fd.append(k, v[k])); fd.append('invoice_date', dayjs(v.invoice_date).format(DATE_TIME_FORMAT.API_DATE)); fd.append('receipt_date', dayjs(v.receipt_date).format(DATE_TIME_FORMAT.API_DATE)); v.equipment_ids.forEach((id: number, i: number) => { const selected = equipment.find((item: any) => item.id === id); fd.append(`items[${i}][equipment_id]`, String(id)); fd.append(`items[${i}][quantity]`, String(v.equipment_quantities?.[id] ?? 1)); fd.append(`items[${i}][unit]`, selected?.unit || 'Cái') }); if (file) fd.append('attachment', file); if (editing) { fd.append('_method', 'PUT'); return api.post(`${API_ENDPOINTS.RECEIPTS.BASE}/${editing.id}`, fd) } return api.post(API_ENDPOINTS.RECEIPTS.BASE, fd) }, onSuccess: (r) => { message.success(r.data.message); setOpen(false); setEditing(undefined); form.resetFields(); setFile(undefined); refresh() }, onError: (e: any) => message.error(e.response?.data?.message || 'Không thể lưu phiếu nhập') })
   const confirm = useMutation({ mutationFn: (id: number) => api.post(`${API_ENDPOINTS.RECEIPTS.BASE}/${id}/confirm`), onSuccess: r => { message.success(r.data.message); refresh() }, onError: (e: any) => message.error(e.response?.data?.message) })
   const remove = useMutation({ mutationFn: (id: number) => api.delete(`${API_ENDPOINTS.RECEIPTS.BASE}/${id}`), onSuccess: r => { message.success(r.data.message); refresh() }, onError: (e: any) => message.error(e.response?.data?.message) })
   const deleteReceipt = (r: any) => Modal.confirm({ title: 'Xóa phiếu nhập?', content: `Phiếu ${r.code} sẽ bị xóa và không thể khôi phục.`, okText: 'Xóa', cancelText: 'Hủy', okButtonProps: { danger: true }, onOk: () => remove.mutateAsync(r.id) })
   const openCreate = () => {
-    const materialWarehouse = orgs.find((org: any) =>
-      ['P-VAT-TU', 'P-VT-TTBYT', 'P-CSVC'].includes(org.code) || org.type === 'WAREHOUSE'
-    )
     setEditing(undefined)
     setFile(undefined)
     form.resetFields()
     form.setFieldsValue({
       invoice_date: dayjs(),
       receipt_date: dayjs(),
-      organization_id: materialWarehouse?.id,
+      // Tự động lấy org của user đang đăng nhập (Phòng Vật tư)
+      organization_id: user?.organization?.id,
     })
     setOpen(true)
   }
@@ -51,11 +51,16 @@ export default function ReceiptsPage() {
     },
   ]
   return <div className="space-y-5"><div className="flex justify-between"><div><h1 className="page-title">Hóa đơn & Phiếu nhập tài sản</h1><p className="page-subtitle">Ghi nhận chứng từ mua và xác nhận tài sản vào kho</p></div><Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Lập phiếu nhập</Button></div>
-    <Card><Input.Search placeholder="Vui lòng nhập mã phiếu, số hóa đơn hoặc nhà cung cấp" onSearch={setSearch} allowClear /><Table className="mt-4" rowKey="id" loading={isLoading} dataSource={data} columns={columns} /></Card>
+    <Card><Input.Search placeholder="Vui lòng nhập mã phiếu, số hóa đơn hoặc nhà cung cấp" onSearch={setSearch} allowClear /><Table className="mt-4" rowKey="id" loading={isLoading} dataSource={data} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} /></Card>
     <Modal title={editing ? `Cập nhật phiếu nhập ${editing.code}` : 'Lập phiếu nhập theo hóa đơn'} open={open} onCancel={() => { setOpen(false); setEditing(undefined) }} onOk={() => form.submit()} okText={editing ? 'Lưu thay đổi' : 'Lập phiếu nhập'} width={720} confirmLoading={save.isPending}><Form form={form} layout="vertical" onFinish={v => save.mutate(v)}>
       <div className="grid grid-cols-2 gap-3"><Form.Item name="invoice_number" label="Số hóa đơn" rules={[{ required: true }]}><Input /></Form.Item><Form.Item name="invoice_date" label="Ngày hóa đơn" rules={[{ required: true }]}><DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} /></Form.Item>
         <Form.Item name="supplier_id" label="Nhà cung cấp"><Select showSearch optionFilterProp="label" options={suppliers.map((x: any) => ({ value: x.id, label: x.name }))} /></Form.Item><Form.Item name="contract_number" label="Số hợp đồng"><Input /></Form.Item>
-        <Form.Item name="receipt_date" label="Ngày nhập" rules={[{ required: true }]}><DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} /></Form.Item><Form.Item name="organization_id" label="Kho tiếp nhận" rules={[{ required: true }]}><Select options={orgs.map((x: any) => ({ value: x.id, label: x.name }))} /></Form.Item>
+        <Form.Item name="receipt_date" label="Ngày nhập" rules={[{ required: true }]}><DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} /></Form.Item>
+        <Form.Item label="Kho tiếp nhận">
+          <Input value={user?.organization?.name} disabled className="!text-slate-700 !bg-slate-50 font-medium" />
+          {/* Lưu organization_id ẩn để gửi lên server */}
+          <Form.Item name="organization_id" noStyle rules={[{ required: true }]}><Input type="hidden" /></Form.Item>
+        </Form.Item>
         <Form.Item name="total_amount" label="Tổng tiền hóa đơn"><InputNumber<number> min={0} precision={0} className="w-full" formatter={v => `${v ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')} parser={v => Number(v?.replace(/\./g, '') || 0)} /></Form.Item>
         <Form.Item label="File hóa đơn"><Upload beforeUpload={f => { setFile(f); return false }} maxCount={1}><Button icon={<UploadOutlined />}>Chọn file</Button></Upload></Form.Item></div>
       <Form.Item name="equipment_ids" label="Tài sản trên hóa đơn" rules={[{ required: true }]}><Select mode="multiple" optionFilterProp="label" options={equipment.map((x: any) => ({ value: x.id, label: `${x.equipment_code} - ${x.name}` }))} /></Form.Item>

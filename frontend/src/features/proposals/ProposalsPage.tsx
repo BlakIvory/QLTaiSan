@@ -13,6 +13,8 @@ import dayjs from 'dayjs'
 import api from '../../api/axios'
 import { API_ENDPOINTS, DATE_TIME_FORMAT } from '../../lib/constants'
 import { formatDate, formatCurrency } from '../../lib/utils'
+import { useAuth } from '../auth/AuthContext'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 const statusMap: Record<string, [string, string]> = {
   DRAFT:     ['Nháp', 'default'],
@@ -23,6 +25,10 @@ const statusMap: Record<string, [string, string]> = {
 
 export default function ProposalsPage() {
   const qc = useQueryClient()
+  const { hasAnyRole } = useAuth()
+  const canApprove = hasAnyRole(['leader', 'admin'])
+  const canCreate = hasAnyRole(['pvtttby', 'admin'])
+
   const [open, setOpen] = useState(false)
   const [detail, setDetail] = useState<any>()
   const [boardNoteModal, setBoardNoteModal] = useState<{ id: number; type: 'approve' | 'reject' } | null>(null)
@@ -97,7 +103,7 @@ export default function ProposalsPage() {
           <Button size="small" icon={<EyeOutlined />} onClick={() =>
             api.get(`${API_ENDPOINTS.PROPOSALS.BASE}/${r.id}`).then(res => setDetail(res.data.data))
           }>Chi tiết</Button>
-          {r.status === 'DRAFT' && <>
+          {r.status === 'DRAFT' && canCreate && <>
             <Button size="small" type="primary" icon={<SendOutlined />}
               onClick={() => doAction.mutate({ id: r.id, action: 'submit' })}>Trình BGĐ</Button>
             <Popconfirm title="Xóa tờ trình?" okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}
@@ -105,7 +111,7 @@ export default function ProposalsPage() {
               <Button size="small" danger icon={<DeleteOutlined />}>Xóa</Button>
             </Popconfirm>
           </>}
-          {r.status === 'SUBMITTED' && <>
+          {r.status === 'SUBMITTED' && canApprove && <>
             <Button size="small" type="primary" icon={<CheckOutlined />}
               onClick={() => setBoardNoteModal({ id: r.id, type: 'approve' })}>Duyệt</Button>
             <Button size="small" danger icon={<CloseOutlined />}
@@ -123,14 +129,16 @@ export default function ProposalsPage() {
           <h1 className="page-title">Tờ trình chủ trương mua sắm</h1>
           <p className="page-subtitle">Lập tờ trình từ bảng tổng hợp → trình Ban giám đốc phê duyệt</p>
         </div>
-        <Button type="primary" icon={<PlusOutlined />}
-          onClick={() => { form.setFieldsValue({ proposal_date: dayjs() }); setOpen(true) }}>
-          Lập tờ trình
-        </Button>
+        {canCreate && (
+          <Button type="primary" icon={<PlusOutlined />}
+            onClick={() => { form.setFieldsValue({ proposal_date: dayjs() }); setOpen(true) }}>
+            Lập tờ trình
+          </Button>
+        )}
       </div>
 
       <Card>
-        <Table rowKey="id" loading={isLoading} dataSource={proposals} columns={columns} />
+        <Table rowKey="id" loading={isLoading} dataSource={proposals} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} />
       </Card>
 
       {/* Modal lập tờ trình */}
@@ -143,33 +151,34 @@ export default function ProposalsPage() {
         confirmLoading={create.isPending}
       >
         <Form form={form} layout="vertical" onFinish={v => create.mutate(v)}>
-          <Form.Item name="summary_id" label="Bảng tổng hợp đề nghị" rules={[{ required: true }]}>
+          <Form.Item name="summary_id" label="Bảng tổng hợp đề nghị" rules={[{ required: true, message: 'Vui lòng chọn bảng tổng hợp' }]}>
             <Select
               showSearch optionFilterProp="label"
-              placeholder="Chọn bảng tổng hợp đã hoàn thiện"
+              placeholder="Vui lòng chọn bảng tổng hợp"
               options={summaries.map((s: any) => ({ value: s.id, label: `[${s.code}] ${s.title}` }))}
             />
           </Form.Item>
-          <Form.Item name="title" label="Tiêu đề tờ trình" rules={[{ required: true }]}>
-            <Input placeholder="Tờ trình về chủ trương mua sắm TTBYT năm 2026" />
+          <Form.Item name="title" label="Tiêu đề tờ trình" rules={[{ required: true, message: 'Vui lòng nhập tiêu đề tờ trình' }]}>
+            <Input placeholder="Vui lòng nhập tiêu đề tờ trình" />
           </Form.Item>
           <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="proposal_date" label="Ngày tờ trình" rules={[{ required: true }]}>
-              <DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} />
+            <Form.Item name="proposal_date" label="Ngày tờ trình" rules={[{ required: true, message: 'Vui lòng chọn ngày tờ trình' }]}>
+              <DatePicker className="w-full" format={DATE_TIME_FORMAT.DATE} placeholder="Vui lòng chọn ngày tờ trình" />
             </Form.Item>
             <Form.Item name="total_amount" label="Tổng kinh phí đề xuất (VNĐ)">
               <InputNumber<number>
                 min={0} precision={0} className="w-full"
+                placeholder="Vui lòng nhập tổng kinh phí đề xuất"
                 formatter={v => `${v ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                 parser={v => Number(v?.replace(/\./g, '') || 0)}
               />
             </Form.Item>
           </div>
           <Form.Item name="justification" label="Căn cứ / Cơ sở pháp lý">
-            <Input.TextArea rows={2} placeholder="Căn cứ Quyết định... Thông tư... Nghị định..." />
+            <Input.TextArea rows={2} placeholder="Vui lòng nhập căn cứ / cơ sở pháp lý" />
           </Form.Item>
           <Form.Item name="content" label="Nội dung tờ trình">
-            <Input.TextArea rows={4} placeholder="Nêu rõ sự cần thiết, mục tiêu, nội dung mua sắm..." />
+            <Input.TextArea rows={4} placeholder="Vui lòng nhập nội dung tờ trình" />
           </Form.Item>
           <Form.Item label="File tờ trình (PDF/Word)">
             <Upload beforeUpload={f => { setFile(f); return false }} maxCount={1} accept=".pdf,.doc,.docx">
@@ -198,8 +207,8 @@ export default function ProposalsPage() {
           >
             <Input.TextArea rows={3}
               placeholder={boardNoteModal?.type === 'approve'
-                ? 'Đồng ý triển khai mua sắm theo kế hoạch...'
-                : 'Nêu rõ lý do từ chối...'} />
+                ? 'Vui lòng nhập ý kiến phê duyệt'
+                : 'Vui lòng nhập lý do từ chối'} />
           </Form.Item>
         </Form>
       </Modal>

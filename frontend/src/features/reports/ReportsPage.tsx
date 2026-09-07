@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useOrganizations } from '../../hooks/useOrganizations'
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
 import {
@@ -14,11 +14,8 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState('inventory') // inventory, repair, liquidation
   const [isExporting, setIsExporting] = useState(false)
 
-  // Fetch organizations
-  const { data: orgs } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: () => api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then((r) => r.data.data),
-  })
+  // Fetch organizations (loại trừ cấp Bệnh viện)
+  const { orgs, orgOptions: orgSelectOptions } = useOrganizations()
 
   // Download export action
   const handleExport = async () => {
@@ -93,14 +90,14 @@ export default function ReportsPage() {
               className="w-full py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             >
               <option value="">-- Toàn bộ Bệnh viện (Tất cả đơn vị) --</option>
-              {orgs?.map((org: any) => (
-                <option key={org.id} value={org.id}>
-                  {org.name} ({org.type})
+              {orgSelectOptions.map((org) => (
+                <option key={org.value} value={org.value}>
+                  {org.label}
                 </option>
               ))}
             </select>
             <p className="text-[11px] text-slate-500 mt-1">
-              Ví dụ: Khoa Khám bệnh, Khoa Nội tổng hợp, Phòng Vật tư...
+              Chọn khoa, phòng hoặc bộ phận cần lập báo cáo
             </p>
           </div>
 

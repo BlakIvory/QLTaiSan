@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Popconfirm, message } from 'antd'
+import { Popconfirm, message, Pagination } from 'antd'
 import api from '../../api/axios'
 import {
   EQUIPMENT_STATUS_LABELS,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 
 import { useOptions } from '../../hooks/useOptions'
+import { useOrganizations } from '../../hooks/useOrganizations'
 
 interface Equipment {
   id: number
@@ -43,6 +44,7 @@ export default function EquipmentListPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [orgFilter, setOrgFilter]       = useState('')
   const [page, setPage]                 = useState(1)
+  const [perPage, setPerPage]           = useState(15)
   const [selectedQr, setSelectedQr]     = useState<Equipment | null>(null)
 
   // Delete Equipment Mutation with Confirmation
@@ -63,7 +65,7 @@ export default function EquipmentListPage() {
 
   // Fetch equipment list
   const { data, isLoading } = useQuery({
-    queryKey: ['equipment', search, statusFilter, orgFilter, page],
+    queryKey: ['equipment', search, statusFilter, orgFilter, page, perPage],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.EQUIPMENT.BASE, {
@@ -72,17 +74,14 @@ export default function EquipmentListPage() {
             status: statusFilter,
             organization_id: orgFilter,
             page,
-            per_page: 15,
+            per_page: perPage,
           },
         })
         .then((r) => r.data),
   })
 
-  // Fetch organizations for filter dropdown
-  const { data: orgs } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: () => api.get(API_ENDPOINTS.ORGANIZATIONS.BASE).then((r) => r.data.data),
-  })
+  // Fetch organizations for filter dropdown (loại trừ cấp Bệnh viện)
+  const { orgOptions: orgFilterOptions } = useOrganizations()
 
   const equipments: Equipment[] = data?.data ?? []
   const meta = data?.meta
@@ -156,9 +155,9 @@ export default function EquipmentListPage() {
               className="w-full md:w-48 py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
             >
               <option value="">Tất cả khoa/phòng</option>
-              {orgs?.map((org: any) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
+              {orgFilterOptions.map((org) => (
+                <option key={org.value} value={org.value}>
+                  {org.label}
                 </option>
               ))}
             </select>
@@ -293,33 +292,26 @@ export default function EquipmentListPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {meta && meta.last_page > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100">
-            <p className="text-xs text-slate-500">
-              Hiển thị {meta.from}–{meta.to} trên tổng số {meta.total} thiết bị
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="btn-ghost p-1.5 rounded-lg disabled:opacity-40"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-xs font-semibold px-3 text-slate-700">
-                Trang {page} / {meta.last_page}
-              </span>
-              <button
-                disabled={page === meta.last_page}
-                onClick={() => setPage((p) => p + 1)}
-                className="btn-ghost p-1.5 rounded-lg disabled:opacity-40"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Pagination & Row count */}
+        <div className="flex flex-wrap items-center justify-between px-6 py-4 border-t border-slate-100 gap-3">
+          <Pagination
+            current={page}
+            total={meta?.total ?? 0}
+            pageSize={perPage}
+            showSizeChanger
+            pageSizeOptions={['10', '15', '20', '50', '100']}
+            onChange={(newPage, newPageSize) => {
+              setPage(newPage)
+              if (newPageSize !== perPage) {
+                setPerPage(newPageSize)
+                setPage(1)
+              }
+            }}
+            showTotal={(total, range) => `Hiển thị ${range[0]}–${range[1]} trên tổng số ${total} dòng`}
+            locale={{ items_per_page: 'dòng / trang' }}
+            hideOnSinglePage={false}
+          />
+        </div>
       </div>
 
       {/* QR Code Modal */}

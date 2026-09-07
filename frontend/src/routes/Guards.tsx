@@ -26,3 +26,20 @@ export function PublicRoute() {
   if (isLoading) return null
   return user ? <Navigate to="/dashboard" replace /> : <Outlet />
 }
+
+export function RoleRoute({ roles, permissions }: { roles?: string[]; permissions?: string[] }) {
+  const { user, isLoading, hasAnyRole, hasPermission } = useAuth()
+
+  if (isLoading) return null
+  if (!user) return <Navigate to="/login" replace />
+
+  if (roles && roles.length > 0 && !hasAnyRole(roles)) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  if (permissions && permissions.length > 0 && !permissions.some((p) => hasPermission(p))) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return <Outlet />
+}

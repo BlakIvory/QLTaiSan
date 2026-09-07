@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Table } from 'antd'
 import api from '../../api/axios'
 import { formatDate } from '../../lib/utils'
 import { API_ENDPOINTS } from '../../lib/constants'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 import {
   Wrench, Plus, Search, CheckCircle, Clock,
   Eye, SlidersHorizontal, UserCheck, DollarSign
@@ -130,72 +132,70 @@ export default function RepairsPage() {
 
       {/* Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Mã phiếu</th>
-                <th>Thiết bị</th>
-                <th>Đơn vị thực hiện</th>
-                <th>Tổng chi phí (VNĐ)</th>
-                <th>Trạng thái</th>
-                <th>Ngày bắt đầu</th>
-                <th className="text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={7}>
-                      <div className="skeleton h-8 w-full" />
-                    </td>
-                  </tr>
-                ))
-              ) : !repairs?.length ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400">
-                    Chưa có phiếu sửa chữa nào.
-                  </td>
-                </tr>
-              ) : (
-                repairs.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="font-mono text-xs font-bold text-slate-800">{r.code}</td>
-                    <td>
-                      <p className="font-semibold text-slate-900 text-sm">{r.equipment?.name ?? '—'}</p>
-                      <p className="text-xs text-slate-400 font-mono">{r.equipment?.equipment_code}</p>
-                    </td>
-                    <td className="text-sm text-slate-600">{r.repair_unit || 'Nội bộ'}</td>
-                    <td className="font-mono text-sm font-semibold text-slate-900">
-                      {(r.total_cost ?? 0).toLocaleString('vi-VN')} ₫
-                    </td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          REPAIR_STATUS_LABELS[r.status]?.class ?? 'badge-gray'
-                        }`}
-                      >
-                        {REPAIR_STATUS_LABELS[r.status]?.label ?? r.status}
-                      </span>
-                    </td>
-                    <td className="text-xs text-slate-500">
-                      {formatDate(r.start_date)}
-                    </td>
-                    <td className="text-right">
-                      <button
-                        className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          rowKey="id"
+          loading={isLoading}
+          dataSource={repairs || []}
+          columns={[
+            {
+              title: 'Mã phiếu',
+              dataIndex: 'code',
+              key: 'code',
+              render: (code: string) => <span className="font-mono text-xs font-bold text-slate-800">{code}</span>,
+            },
+            {
+              title: 'Thiết bị',
+              key: 'equipment',
+              render: (_: any, r: Repair) => (
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm">{r.equipment?.name ?? '—'}</p>
+                  <p className="text-xs text-slate-400 font-mono">{r.equipment?.equipment_code}</p>
+                </div>
+              ),
+            },
+            {
+              title: 'Đơn vị thực hiện',
+              dataIndex: 'repair_unit',
+              key: 'repair_unit',
+              render: (u: string) => <span className="text-sm text-slate-600">{u || 'Nội bộ'}</span>,
+            },
+            {
+              title: 'Tổng chi phí (VNĐ)',
+              dataIndex: 'total_cost',
+              key: 'total_cost',
+              render: (cost: number) => <span className="font-mono text-sm font-semibold text-slate-900">{(cost ?? 0).toLocaleString('vi-VN')} ₫</span>,
+            },
+            {
+              title: 'Trạng thái',
+              key: 'status',
+              render: (_: any, r: Repair) => (
+                <span className={`badge ${REPAIR_STATUS_LABELS[r.status]?.class ?? 'badge-gray'}`}>
+                  {REPAIR_STATUS_LABELS[r.status]?.label ?? r.status}
+                </span>
+              ),
+            },
+            {
+              title: 'Ngày bắt đầu',
+              dataIndex: 'start_date',
+              key: 'start_date',
+              render: (d: string) => <span className="text-xs text-slate-500">{formatDate(d)}</span>,
+            },
+            {
+              title: 'Thao tác',
+              key: 'actions',
+              align: 'right' as const,
+              render: () => (
+                <button
+                  className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Xem chi tiết"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              ),
+            },
+          ]}
+          pagination={DEFAULT_TABLE_PAGINATION}
+        />
       </div>
 
       {/* Modal Create */}

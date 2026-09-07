@@ -10,6 +10,8 @@ import {
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
 import { filterOptionUnaccented } from '../../lib/utils'
+import { useOrganizations } from '../../hooks/useOrganizations'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   admin: { label: 'Quản trị viên', color: 'red' },
@@ -47,14 +49,8 @@ export default function UsersPage() {
     },
   })
 
-  // Fetch Organizations for Dropdown
-  const { data: organizations } = useQuery({
-    queryKey: ['organizations-list'],
-    queryFn: async () => {
-      const res = await api.get(API_ENDPOINTS.ORGANIZATIONS.BASE)
-      return res.data.data
-    },
-  })
+  // Fetch Organizations for Dropdown (loại trừ cấp Bệnh viện)
+  const { orgOptions } = useOrganizations()
 
   // Save (Create/Update) User Mutation
   const saveMutation = useMutation({
@@ -293,7 +289,7 @@ export default function UsersPage() {
           dataSource={users}
           rowKey="id"
           loading={isLoading}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
+          pagination={DEFAULT_TABLE_PAGINATION}
           className="custom-table"
         />
       </div>
@@ -375,13 +371,14 @@ export default function UsersPage() {
             </Form.Item>
 
             <Form.Item label="Khoa / Phòng trực thuộc" name="organization_id">
-              <Select placeholder="Vui lòng chọn khoa phòng" allowClear size="large" showSearch filterOption={filterOptionUnaccented}>
-                {organizations?.map((org: any) => (
-                  <Select.Option key={org.id} value={org.id}>
-                    {org.name}
-                  </Select.Option>
-                ))}
-              </Select>
+              <Select
+                placeholder="Vui lòng chọn khoa phòng"
+                allowClear
+                size="large"
+                showSearch
+                filterOption={filterOptionUnaccented}
+                options={orgOptions}
+              />
             </Form.Item>
           </div>
 

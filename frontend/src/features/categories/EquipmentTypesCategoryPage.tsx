@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Table } from 'antd'
 import api from '../../api/axios'
 import { API_ENDPOINTS } from '../../lib/constants'
 import { Layers, Plus, Search, Edit, X, Save } from 'lucide-react'
+import { DEFAULT_TABLE_PAGINATION } from '../../lib/pagination'
 
 interface EquipmentType {
   id: number
@@ -209,100 +211,102 @@ export default function EquipmentTypesCategoryPage() {
       {/* Types Table */}
       {activeTab === 'types' && (
         <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Mã loại</th>
-                  <th className="py-3 px-4">Tên loại thiết bị</th>
-                  <th className="py-3 px-4">Nhóm thiết bị</th>
-                  <th className="py-3 px-4">Chu kỳ bảo trì</th>
-                  <th className="py-3 px-4">Chu kỳ kiểm định</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {isLoadingTypes ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
-                      Đang tải Loại thiết bị...
-                    </td>
-                  </tr>
-                ) : filteredTypes.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
-                      Chưa có loại thiết bị nào.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTypes.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4 font-mono font-medium text-slate-700">{t.code}</td>
-                      <td className="py-3 px-4 font-medium text-slate-800">{t.name}</td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {t.equipment_group?.name ?? '—'}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {t.maintenance_cycle_days ? `${t.maintenance_cycle_days} ngày` : '—'}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {t.inspection_cycle_days ? `${t.inspection_cycle_days} ngày` : '—'}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => handleOpenTypeModal(t)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            rowKey="id"
+            loading={isLoadingTypes}
+            dataSource={filteredTypes}
+            columns={[
+              {
+                title: 'Mã loại',
+                dataIndex: 'code',
+                key: 'code',
+                render: (code: string) => <span className="font-mono font-medium text-slate-700">{code}</span>,
+              },
+              {
+                title: 'Tên loại thiết bị',
+                dataIndex: 'name',
+                key: 'name',
+                render: (name: string) => <span className="font-medium text-slate-800">{name}</span>,
+              },
+              {
+                title: 'Nhóm thiết bị',
+                key: 'equipment_group',
+                render: (_: any, t: EquipmentType) => <span className="text-slate-600">{t.equipment_group?.name ?? '—'}</span>,
+              },
+              {
+                title: 'Chu kỳ bảo trì',
+                dataIndex: 'maintenance_cycle_days',
+                key: 'maintenance_cycle_days',
+                render: (d?: number) => <span className="text-slate-600">{d ? `${d} ngày` : '—'}</span>,
+              },
+              {
+                title: 'Chu kỳ kiểm định',
+                dataIndex: 'inspection_cycle_days',
+                key: 'inspection_cycle_days',
+                render: (d?: number) => <span className="text-slate-600">{d ? `${d} ngày` : '—'}</span>,
+              },
+              {
+                title: 'Thao tác',
+                key: 'actions',
+                align: 'right' as const,
+                render: (_: any, t: EquipmentType) => (
+                  <button
+                    onClick={() => handleOpenTypeModal(t)}
+                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                ),
+              },
+            ]}
+            pagination={DEFAULT_TABLE_PAGINATION}
+          />
         </div>
       )}
 
       {/* Groups Table */}
       {activeTab === 'groups' && (
         <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Mã nhóm</th>
-                  <th className="py-3 px-4">Tên nhóm thiết bị</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {isLoadingGroups ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">
-                      Đang tải Nhóm thiết bị...
-                    </td>
-                  </tr>
-                ) : filteredGroups.map((g) => (
-                  <tr key={g.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-medium text-slate-700">{g.code}</td>
-                    <td className="py-3 px-4 font-medium text-slate-800">{g.name}</td>
-                    <td className="py-3 px-4">
-                      <span className="badge badge-green">Hoạt động</span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button onClick={() => handleOpenGroupModal(g)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg" title="Chỉnh sửa">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            rowKey="id"
+            loading={isLoadingGroups}
+            dataSource={filteredGroups}
+            columns={[
+              {
+                title: 'Mã nhóm',
+                dataIndex: 'code',
+                key: 'code',
+                render: (code: string) => <span className="font-mono font-medium text-slate-700">{code}</span>,
+              },
+              {
+                title: 'Tên nhóm thiết bị',
+                dataIndex: 'name',
+                key: 'name',
+                render: (name: string) => <span className="font-medium text-slate-800">{name}</span>,
+              },
+              {
+                title: 'Trạng thái',
+                key: 'status',
+                render: () => <span className="badge badge-green">Hoạt động</span>,
+              },
+              {
+                title: 'Thao tác',
+                key: 'actions',
+                align: 'right' as const,
+                render: (_: any, g: EquipmentGroup) => (
+                  <button
+                    onClick={() => handleOpenGroupModal(g)}
+                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                ),
+              },
+            ]}
+            pagination={DEFAULT_TABLE_PAGINATION}
+          />
         </div>
       )}
 
