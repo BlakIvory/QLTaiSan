@@ -6,7 +6,7 @@ import {
   HandshakeIcon, FileText, Users, Settings, AlertTriangle,
   Building2, ChevronRight, BookOpen, BarChart3, Trash2,
   RotateCcw, LogOut, Layers, Network, Sliders, Shield,
-  ShoppingCart, FileSpreadsheet, Send
+  ShoppingCart, FileSpreadsheet, Send, X
 } from 'lucide-react'
 
 interface NavItem {
@@ -247,7 +247,12 @@ const navSections: NavSection[] = [
   },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { hasPermission, hasRole, logout, user } = useAuth()
   const location = useLocation()
 
@@ -274,81 +279,109 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div className="sidebar-logo">
-        <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shrink-0">
-          <Activity className="w-5 h-5 text-white" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-white text-sm font-semibold leading-tight truncate">Quản lý TTBYT</p>
-          <p className="text-slate-400 text-xs truncate">BV ĐK Hòa Hảo - Medic Cần Thơ</p>
-        </div>
-      </div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="sidebar-nav">
-        {navSections.map((section) => {
-          const visibleItems = section.items.filter(canShow)
-          if (!visibleItems.length) return null
-
-          return (
-            <div key={section.title}>
-              <p className="sidebar-section-title">{section.title}</p>
-              {visibleItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `sidebar-item ${isActive ? 'active' : ''}`
-                  }
-                >
-                  <item.icon className="w-4.5 h-4.5" />
-                  <span className="flex-1">{item.label}</span>
-                  {location.pathname.startsWith(item.to) && item.to !== '/dashboard' && (
-                    <ChevronRight className="w-3 h-3 opacity-60" />
-                  )}
-                </NavLink>
-              ))}
+      <aside
+        className={`sidebar ${
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Logo & Mobile Close Button */}
+        <div className="sidebar-logo justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shrink-0">
+              <Activity className="w-5 h-5 text-white" />
             </div>
-          )
-        })}
-      </nav>
-
-      {/* User Footer & Merged Roles */}
-      <div className="border-t border-slate-800 p-3 space-y-2">
-        {/* User Roles Badges */}
-        {user?.roles && user.roles.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-1">
-            {user.roles.map((role) => (
-              <span
-                key={role}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
-              >
-                <Shield className="w-2.5 h-2.5 text-primary-400" />
-                {ROLE_NAMES_VI[role] || role}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors group">
-          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-medium truncate">{user?.name}</p>
-            <p className="text-slate-500 text-xs truncate">{user?.email}</p>
+            <div className="min-w-0">
+              <p className="text-white text-sm font-semibold leading-tight truncate">Quản lý TTBYT</p>
+              <p className="text-slate-400 text-[11px] truncate">BV ĐK Hòa Hảo - Medic Cần Thơ</p>
+            </div>
           </div>
           <button
-            onClick={logout}
-            title="Đăng xuất"
-            className="text-slate-500 hover:text-red-400 transition-colors opacity-80 group-hover:opacity-100 p-1"
+            onClick={onClose}
+            className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+            aria-label="Đóng menu"
+            title="Đóng menu"
           >
-            <LogOut className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
-      </div>
-    </aside>
+
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          {navSections.map((section) => {
+            const visibleItems = section.items.filter(canShow)
+            if (!visibleItems.length) return null
+
+            return (
+              <div key={section.title}>
+                <p className="sidebar-section-title">{section.title}</p>
+                {visibleItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => {
+                      if (onClose) onClose()
+                    }}
+                    className={({ isActive }) =>
+                      `sidebar-item ${isActive ? 'active' : ''}`
+                    }
+                  >
+                    <item.icon className="w-4.5 h-4.5" />
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {location.pathname.startsWith(item.to) && item.to !== '/dashboard' && (
+                      <ChevronRight className="w-3 h-3 opacity-60 shrink-0" />
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            )
+          })}
+        </nav>
+
+        {/* User Footer & Merged Roles */}
+        <div className="border-t border-slate-800 p-3 space-y-2 shrink-0">
+          {/* User Roles Badges */}
+          {user?.roles && user.roles.length > 0 && (
+            <div className="flex flex-wrap gap-1 px-1">
+              {user.roles.map((role) => (
+                <span
+                  key={role}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
+                >
+                  <Shield className="w-2.5 h-2.5 text-primary-400" />
+                  {ROLE_NAMES_VI[role] || role}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors group">
+            <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {user?.name?.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-xs font-medium truncate">{user?.name}</p>
+              <p className="text-slate-500 text-xs truncate">{user?.email}</p>
+            </div>
+            <button
+              onClick={logout}
+              title="Đăng xuất"
+              className="text-slate-500 hover:text-red-400 transition-colors opacity-80 group-hover:opacity-100 p-1"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   )
 }

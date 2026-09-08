@@ -42,10 +42,10 @@
     @apply bg-white rounded-xl shadow-card border border-slate-100;
   }
   .card-header {
-    @apply flex items-center justify-between px-6 py-4 border-b border-slate-100;
+    @apply flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100;
   }
-  .card-body  { @apply p-6; }
-  .card-footer { @apply px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl; }
+  .card-body  { @apply p-4 sm:p-6; }
+  .card-footer { @apply px-4 sm:px-6 py-3.5 sm:py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl; }
 
   /* ===== FORM & INPUTS ===== */
   .label, .form-label {
@@ -129,15 +129,15 @@
 
   /* ===== SIDEBAR ===== */
   .sidebar {
-    @apply fixed inset-y-0 left-0 z-30
+    @apply fixed inset-y-0 left-0 z-50
            flex flex-col w-[var(--sidebar-width)]
-           bg-slate-900 shadow-xl
-           transition-transform duration-300;
+           bg-slate-900 shadow-2xl
+           transition-transform duration-300 ease-in-out;
   }
   .sidebar-logo {
-    @apply flex items-center gap-3 px-5 py-4 border-b border-slate-700;
+    @apply flex items-center gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-700/80;
   }
-  .sidebar-nav { @apply flex-1 overflow-y-auto py-4 px-3; }
+  .sidebar-nav { @apply flex-1 overflow-y-auto py-3 px-2.5 sm:px-3; }
   .sidebar-section-title {
     @apply text-xs font-semibold uppercase tracking-widest text-slate-500 px-3 mt-4 mb-2;
   }
@@ -154,39 +154,39 @@
   /* ===== HEADER ===== */
   .main-header {
     @apply fixed top-0 right-0 z-20
-           flex items-center justify-between px-6
+           flex items-center justify-between px-3 sm:px-6
            h-[var(--header-height)] bg-white border-b border-slate-200
-           shadow-sm;
-    left: var(--sidebar-width);
+           shadow-sm left-0 lg:left-[var(--sidebar-width)]
+           transition-all duration-300;
   }
 
   /* ===== MAIN CONTENT ===== */
   .main-content {
-    @apply min-h-screen pt-[var(--header-height)] bg-slate-50;
-    padding-left: var(--sidebar-width);
+    @apply min-h-screen pt-[var(--header-height)] bg-slate-50
+           pl-0 lg:pl-[var(--sidebar-width)];
   }
-  .page-container { @apply p-6 max-w-screen-2xl mx-auto; }
-  .page-title     { @apply text-xl font-bold text-slate-800; }
-  .page-subtitle  { @apply text-sm text-slate-500 mt-0.5; }
+  .page-container { @apply p-3.5 sm:p-5 lg:p-6 max-w-screen-2xl mx-auto; }
+  .page-title     { @apply text-lg sm:text-xl font-bold text-slate-800; }
+  .page-subtitle  { @apply text-xs sm:text-sm text-slate-500 mt-0.5; }
 
   /* ===== STATS CARD ===== */
   .stat-card {
-    @apply card p-5 flex items-start gap-4 hover:shadow-card-md transition-shadow duration-200;
+    @apply card p-3.5 sm:p-5 flex items-start gap-3 sm:gap-4 hover:shadow-card-md transition-shadow duration-200;
   }
   .stat-icon {
-    @apply w-12 h-12 rounded-xl flex items-center justify-center shrink-0;
+    @apply w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0;
   }
-  .stat-label { @apply text-sm text-slate-500 font-medium; }
-  .stat-value { @apply text-2xl font-bold text-slate-800 mt-1; }
+  .stat-label { @apply text-xs sm:text-sm text-slate-500 font-medium; }
+  .stat-value { @apply text-xl sm:text-2xl font-bold text-slate-800 mt-0.5 sm:mt-1; }
   .stat-change { @apply text-xs mt-1; }
 
   /* ===== MODAL ===== */
   .modal-overlay {
-    @apply fixed inset-0 z-50 bg-black/50 backdrop-blur-sm
-           flex items-center justify-center p-4 animate-fade-in;
+    @apply fixed inset-0 z-50 bg-black/60 backdrop-blur-sm
+           flex items-center justify-center p-3 sm:p-4 animate-fade-in;
   }
   .modal {
-    @apply bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto
+    @apply bg-white rounded-2xl shadow-2xl w-[94vw] sm:w-full max-h-[90vh] overflow-y-auto
            animate-slide-in;
   }
   .modal-sm  { @apply modal max-w-md; }
@@ -194,10 +194,10 @@
   .modal-lg  { @apply modal max-w-4xl; }
   .modal-xl  { @apply modal max-w-6xl; }
   .modal-header {
-    @apply flex items-center justify-between p-6 border-b border-slate-100;
+    @apply flex items-center justify-between p-4 sm:p-6 border-b border-slate-100;
   }
-  .modal-body   { @apply p-6; }
-  .modal-footer { @apply flex justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl; }
+  .modal-body   { @apply p-4 sm:p-6; }
+  .modal-footer { @apply flex flex-wrap justify-end gap-2 sm:gap-3 p-4 sm:p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl; }
 
   /* ===== BREADCRUMB ===== */
   .breadcrumb {

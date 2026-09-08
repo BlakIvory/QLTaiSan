@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Sidebar from './Sidebar'
@@ -25,13 +25,21 @@ function RouteChangeWatcher() {
 }
 
 export default function AppLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const location = useLocation()
+
+  // Tự động đóng sidebar drawer khi chuyển trang
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
+
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col" style={{ marginLeft: 'var(--sidebar-width)' }}>
-        <Header />
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-0 lg:ml-[var(--sidebar-width)]">
+        <Header onToggleSidebar={() => setMobileMenuOpen((prev) => !prev)} />
         <RouteChangeWatcher />
-        <main className="flex-1 pt-[var(--header-height)] bg-slate-50">
+        <main className="flex-1 pt-[var(--header-height)] bg-slate-50 min-w-0">
           <div className="page-container">
             <Outlet />
           </div>
