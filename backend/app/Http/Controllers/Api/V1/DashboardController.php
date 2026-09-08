@@ -36,36 +36,62 @@ class DashboardController extends Controller
 
     public function charts(): JsonResponse
     {
+        $statusLabels = [
+            'IN_USE'              => 'Đang sử dụng',
+            'UNDER_REPAIR'        => 'Đang sửa chữa',
+            'UNDER_MAINTENANCE'   => 'Đang bảo trì',
+            'IN_STOCK'            => 'Trong kho',
+            'PENDING_LIQUIDATION' => 'Chờ thanh lý',
+            'LIQUIDATED'          => 'Đã thanh lý',
+            'DISPOSED'            => 'Đã hủy',
+            'NEW'                 => 'Mới tiếp nhận',
+            'AVAILABLE'           => 'Sẵn sàng sử dụng',
+        ];
+
         // 1. Repair costs by month (last 6 months)
         $repairCosts = Repair::select(
                 DB::raw("strftime('%m/%Y', created_at) as month"),
-                DB::raw("SUM(total_cost) as total_cost")
+                DB::raw("CAST(COALESCE(SUM(total_cost), 0) AS INTEGER) as total_cost")
             )
             ->groupBy('month')
             ->orderBy('created_at', 'asc')
             ->limit(6)
             ->get();
 
+        if ($repairCosts->isEmpty()) {
+            $repairCosts = collect();
+            for ($i = 5; $i >= 0; $i--) {
+                $repairCosts->push([
+                    'month'      => now()->subMonths($i)->format('m/Y'),
+                    'total_cost' => 0,
+                ]);
+            }
+        }
+
         // 2. Equipment by status
         $byStatus = Equipment::select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get()
-            ->map(function ($item) {
+            ->map(function ($item) use ($statusLabels) {
+                $statusKey = $item->status instanceof \BackedEnum ? $item->status->value : (string)$item->status;
+                $label = method_exists($item->status, 'label')
+                    ? $item->status->label()
+                    : ($statusLabels[$statusKey] ?? $statusKey);
                 return [
-                    'status' => $item->status,
-                    'label'  => $item->status instanceof \App\Enums\EquipmentStatus ? $item->status->label() : (string)$item->status,
-                    'count'  => $item->count,
+                    'status' => $statusKey,
+                    'label'  => $label,
+                    'count'  => (int)$item->count,
                 ];
             });
 
-        // 3. Equipment by organization
-        $byOrganization = Organization::withCount('equipment')
-            ->having('equipment_count', '>', 0)
+        // 3. Equipment by organization (compatible with SQLite, MySQL, and PostgreSQL)
+        $byOrganization = Organization::has('equipment')
+            ->withCount('equipment')
             ->get()
             ->map(function ($org) {
                 return [
                     'name'  => $org->name,
-                    'count' => $org->equipment_count,
+                    'count' => (int)$org->equipment_count,
                 ];
             });
 

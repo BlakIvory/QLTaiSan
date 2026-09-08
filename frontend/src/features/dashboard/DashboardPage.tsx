@@ -79,8 +79,8 @@ export default function DashboardPage() {
             <h3 className="font-semibold text-slate-800">Chi phí sửa chữa theo tháng</h3>
           </div>
           <div className="card-body">
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={charts?.repair_costs ?? []}>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={charts?.repair_costs ?? []} margin={{ left: -10, right: 10 }}>
                 <defs>
                   <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -88,8 +88,8 @@ export default function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => (v / 1e6).toFixed(0) + 'M'} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v > 0 ? (v / 1e6).toFixed(1) + 'M' : '0'} />
                 <Tooltip formatter={(v) => (typeof v === 'number' ? v.toLocaleString('vi-VN') + ' ₫' : v)} />
                 <Area type="monotone" dataKey="total_cost" stroke="#3b82f6" fill="url(#costGrad)" strokeWidth={2} name="Chi phí" />
               </AreaChart>
@@ -103,23 +103,26 @@ export default function DashboardPage() {
             <h3 className="font-semibold text-slate-800">Thiết bị theo trạng thái</h3>
           </div>
           <div className="card-body flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={charts?.by_status ?? []}
-                  cx="50%" cy="50%"
-                  innerRadius={55} outerRadius={85}
+                  cx="50%" cy="45%"
+                  innerRadius={45} outerRadius={72}
                   paddingAngle={3}
                   dataKey="count"
                   nameKey="label"
-                  label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                  labelLine={false}
                 >
                   {(charts?.by_status ?? []).map((_: any, i: number) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(v: any, name: any) => [`${v} thiết bị`, name]} />
+                <Legend
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -132,12 +135,18 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-slate-800">Số thiết bị theo khoa/phòng</h3>
         </div>
         <div className="card-body">
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={charts?.by_organization ?? []}>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={charts?.by_organization ?? []} margin={{ bottom: 35, left: -10, right: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 10 }}
+                interval={0}
+                angle={-18}
+                textAnchor="end"
+              />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip formatter={(v: any) => [`${v} thiết bị`, 'Số lượng']} />
               <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Số thiết bị" />
             </BarChart>
           </ResponsiveContainer>
