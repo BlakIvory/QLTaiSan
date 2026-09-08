@@ -1,0 +1,7 @@
+frontend
+tests
+.git
+node_modules
+backend/vendor
+backend/.env
+*.log
