@@ -287,7 +287,6 @@ export default function OrganizationsCategoryPage() {
           pagination={DEFAULT_TABLE_PAGINATION}
         />
       </div>
-      </div>
 
       {/* Modal Add / Edit */}
       {isModalOpen && (

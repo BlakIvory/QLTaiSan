@@ -11,9 +11,10 @@ import {
 } from '../../lib/constants'
 import {
   Search, Plus, QrCode, Eye, Edit, Trash2,
-  FileSpreadsheet, SlidersHorizontal, ChevronLeft, ChevronRight,
+  FileSpreadsheet, SlidersHorizontal, Building2,
 } from 'lucide-react'
 
+import { useAuth } from '../auth/AuthContext'
 import { useOptions } from '../../hooks/useOptions'
 import { useOrganizations } from '../../hooks/useOrganizations'
 
@@ -40,6 +41,19 @@ interface Equipment {
 
 export default function EquipmentListPage() {
   const queryClient = useQueryClient()
+  const { user, hasAnyRole, hasPermission } = useAuth()
+
+  // Phân quyền xem thiết bị: Chỉ Ban Giám Đốc, Phòng Vật tư và Quản trị viên mới được xem toàn bộ thiết bị viện.
+  // Các tài khoản khác chỉ xem được thiết bị thuộc đơn vị (khoa/phòng) của mình.
+  const canViewAll = Boolean(
+    hasAnyRole(['admin', 'leader', 'pvtttby']) ||
+    user?.organization?.code === 'BGD' ||
+    user?.organization?.code === 'P-VAT-TU' ||
+    user?.organization?.code === 'P-VT-TTBYT' ||
+    user?.organization?.name?.toLowerCase().includes('giám đốc') ||
+    user?.organization?.name?.toLowerCase().includes('vật tư')
+  )
+
   const [search, setSearch]             = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [orgFilter, setOrgFilter]       = useState('')
@@ -63,16 +77,21 @@ export default function EquipmentListPage() {
   const { getOptionList } = useOptions(['equipment_status'])
   const statusOptions = getOptionList('equipment_status')
 
+  // Đơn vị lọc thực tế: nếu không phải BGĐ/Phòng Vật tư thì cố định theo đơn vị của user
+  const effectiveOrgFilter = canViewAll
+    ? orgFilter
+    : (user?.organization?.id ? String(user.organization.id) : '')
+
   // Fetch equipment list
   const { data, isLoading } = useQuery({
-    queryKey: ['equipment', search, statusFilter, orgFilter, page, perPage],
+    queryKey: ['equipment', search, statusFilter, effectiveOrgFilter, page, perPage],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.EQUIPMENT.BASE, {
           params: {
             search,
             status: statusFilter,
-            organization_id: orgFilter,
+            organization_id: effectiveOrgFilter,
             page,
             per_page: perPage,
           },
@@ -93,7 +112,9 @@ export default function EquipmentListPage() {
         <div>
           <h1 className="page-title">Quản lý Trang thiết bị</h1>
           <p className="page-subtitle">
-            Danh sách tất cả thiết bị y tế trong hệ thống bệnh viện
+            {canViewAll
+              ? 'Danh sách tất cả thiết bị y tế trong hệ thống bệnh viện'
+              : `Danh sách thiết bị thuộc ${user?.organization?.name || 'khoa/phòng của bạn'}`}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -101,10 +122,12 @@ export default function EquipmentListPage() {
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Xuất Excel</span>
           </button>
-          <Link to="/equipment/create" className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            <span>Thêm thiết bị mới</span>
-          </Link>
+          {(hasPermission('equipment.create') || canViewAll) && (
+            <Link to="/equipment/create" className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span>Thêm thiết bị mới</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -146,21 +169,36 @@ export default function EquipmentListPage() {
             </select>
 
             {/* Organization Filter */}
-            <select
-              value={orgFilter}
-              onChange={(e) => {
-                setOrgFilter(e.target.value)
-                setPage(1)
-              }}
-              className="w-full md:w-48 py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-            >
-              <option value="">Tất cả khoa/phòng</option>
-              {orgFilterOptions.map((org) => (
-                <option key={org.value} value={org.value}>
-                  {org.label}
-                </option>
-              ))}
-            </select>
+            {canViewAll ? (
+              <select
+                value={orgFilter}
+                onChange={(e) => {
+                  setOrgFilter(e.target.value)
+                  setPage(1)
+                }}
+                className="w-full md:w-48 py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+              >
+                <option value="">Tất cả khoa/phòng</option>
+                {orgFilterOptions.map((org) => (
+                  <option key={org.value} value={org.value}>
+                    {org.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div
+                className="flex items-center gap-2 w-full md:w-auto px-3 py-2 bg-slate-100/90 border border-slate-200 rounded-lg text-sm text-slate-700 font-medium"
+                title="Tài khoản chỉ xem thiết bị thuộc khoa/phòng của mình"
+              >
+                <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+                <span className="truncate max-w-[180px] text-slate-800">
+                  {user?.organization?.name || 'Khoa/phòng nội bộ'}
+                </span>
+                <span className="text-[11px] text-primary-700 bg-primary-50 border border-primary-100 px-1.5 py-0.5 rounded font-medium shrink-0">
+                  Đơn vị của bạn
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -258,15 +296,17 @@ export default function EquipmentListPage() {
                         >
                           <Eye className="w-4 h-4 text-blue-600" />
                         </Link>
-                        <Link
-                          to={`/equipment/${eq.id}/edit`}
-                          className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit className="w-4 h-4 text-blue-600" />
-                        </Link>
+                        {(hasPermission('equipment.update') || canViewAll) && (
+                          <Link
+                            to={`/equipment/${eq.id}/edit`}
+                            className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit className="w-4 h-4 text-blue-600" />
+                          </Link>
+                        )}
 
-                        {eq.status === 'PENDING_RECEIPT' && (
+                        {(hasPermission('equipment.delete') || canViewAll) && eq.status === 'PENDING_RECEIPT' && (
                           <Popconfirm
                             title="Xác nhận xóa thiết bị"
                             description={`Bạn có chắc chắn muốn xóa thiết bị "${eq.name}" không?`}

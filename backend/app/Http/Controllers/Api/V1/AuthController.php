@@ -145,6 +145,7 @@ class AuthController extends Controller
                 'id'   => $user->organization->id,
                 'name' => $user->organization->name,
                 'type' => $user->organization->type,
+                'code' => $user->organization->code,
             ] : null,
             'roles'           => $user->getRoleNames(),
             'permissions'     => $user->getAllPermissions()->pluck('name'),

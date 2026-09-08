@@ -34,9 +34,22 @@ class EquipmentController extends Controller
             $query->where('status', $status);
         }
 
-        // Organization filter
-        if ($orgId = $request->input('organization_id')) {
-            $query->where('organization_id', $orgId);
+        // Phân quyền hiển thị thiết bị:
+        // Chỉ Ban Giám đốc, Phòng Vật tư và Quản trị viên mới xem được toàn bộ thiết bị.
+        // Các tài khoản khoa/phòng khác chỉ thấy thiết bị thuộc khoa/phòng mình.
+        $user = $request->user();
+        $canViewAll = $this->canViewAllEquipment($user);
+
+        if ($canViewAll) {
+            if ($orgId = $request->input('organization_id')) {
+                $query->where('organization_id', $orgId);
+            }
+        } else {
+            if ($user && $user->organization_id) {
+                $query->where('organization_id', $user->organization_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Equipment type filter
@@ -125,6 +138,16 @@ class EquipmentController extends Controller
 
     public function show(Equipment $equipment): JsonResponse
     {
+        $user = auth()->user();
+        if ($user && !$this->canViewAllEquipment($user)) {
+            if ($equipment->organization_id !== $user->organization_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền truy cập thông tin thiết bị của khoa/phòng khác.',
+                ], 403);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data'    => $equipment->load([
@@ -134,6 +157,50 @@ class EquipmentController extends Controller
                 'repairs', 'maintenancePlans', 'inspections',
             ]),
         ]);
+    }
+
+    /**
+     * Kiểm tra người dùng có được quyền xem toàn bộ thiết bị bệnh viện hay không.
+     * Chỉ Ban Giám đốc (role leader / đơn vị BGD), Phòng Vật tư (role pvtttby / đơn vị P-VAT-TU)
+     * và Quản trị viên (admin) mới được xem tất cả thiết bị.
+     */
+    private function canViewAllEquipment(?\App\Models\User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        // 1. Quản trị viên hệ thống
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // 2. Ban Giám Đốc (Role leader)
+        if ($user->hasRole('leader')) {
+            return true;
+        }
+
+        // 3. Phòng Vật tư – TTBYT (Role pvtttby)
+        if ($user->hasRole('pvtttby')) {
+            return true;
+        }
+
+        // 4. Kiểm tra đơn vị / tổ chức của người dùng
+        if ($user->organization) {
+            $code = strtoupper($user->organization->code ?? '');
+            $name = mb_strtolower($user->organization->name ?? '');
+
+            if (
+                in_array($code, ['BGD', 'P-VAT-TU', 'P-VT-TTBYT', 'BV-HOA-HAO']) ||
+                str_contains($name, 'giám đốc') ||
+                str_contains($name, 'vật tư') ||
+                str_contains($name, 'lãnh đạo')
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function update(Request $request, Equipment $equipment): JsonResponse

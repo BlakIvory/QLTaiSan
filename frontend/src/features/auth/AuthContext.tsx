@@ -11,7 +11,7 @@ interface User {
   avatar?: string
   is_active: boolean
   last_login_at?: string
-  organization?: { id: number; name: string; type: string } | null
+  organization?: { id: number; name: string; type: string; code?: string } | null
   roles: string[]
   permissions: string[]
   created_at: string

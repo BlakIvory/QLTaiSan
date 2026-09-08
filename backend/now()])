@@ -1,0 +1,1 @@
+App\Models\ProposalDocument::where('code', 'TT-UNHAPPY-TEST')-;  = App\Models\PurchaseRequestSummary::first(); App\Models\ProposalDocument::create(['code' =, 'summary_id' =, 'title' = trình kiểm thử luồng từ chối UH-FLOW-001', 'proposal_date' =, 'total_amount' =, 'status' =, 'created_by' =, 'submitted_by' =, 'submitted_at' =; echo 'Created TT-UNHAPPY-TEST'; 
