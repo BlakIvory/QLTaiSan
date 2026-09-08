@@ -34,13 +34,13 @@ export default function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 w-full max-w-full overflow-x-hidden">
       <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-0 lg:ml-[var(--sidebar-width)]">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden transition-all duration-300 ml-0 lg:ml-[var(--sidebar-width)]">
         <Header onToggleSidebar={() => setMobileMenuOpen((prev) => !prev)} />
         <RouteChangeWatcher />
-        <main className="flex-1 pt-[var(--header-height)] bg-slate-50 min-w-0">
-          <div className="page-container">
+        <main className="flex-1 pt-[var(--header-height)] bg-slate-50 min-w-0 w-full max-w-full">
+          <div className="page-container w-full max-w-full">
             <Outlet />
           </div>
         </main>
