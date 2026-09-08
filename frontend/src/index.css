@@ -251,8 +251,64 @@
   .toast-info    { @apply toast border-l-4 border-l-blue-500; }
 }
 
+/* ===== ANTD RESPONSIVE FIXES ===== */
+.ant-card {
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+}
+.ant-card .ant-card-body {
+  padding: 12px !important;
+}
+@media (min-width: 640px) {
+  .ant-card .ant-card-body {
+    padding: 20px !important;
+  }
+}
+
+/* Prevent Ant Design Table from squeezing columns vertically on mobile */
+.ant-table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.ant-table-wrapper .ant-table {
+  min-width: 680px;
+}
+.ant-table-wrapper .ant-table-container {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+.ant-table-wrapper .ant-table-thead > tr > th {
+  white-space: nowrap !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  background-color: #f8fafc !important;
+}
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  white-space: nowrap !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+}
+.ant-table-wrapper .ant-pagination {
+  flex-wrap: wrap !important;
+  gap: 4px;
+  justify-content: center !important;
+  margin-top: 14px !important;
+}
+@media (min-width: 640px) {
+  .ant-table-wrapper .ant-pagination {
+    justify-content: flex-end !important;
+  }
+}
+
+/* Ant Design Modal Responsive */
+.ant-modal {
+  max-width: calc(100vw - 20px) !important;
+  margin: 10px auto !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { @apply bg-transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
 ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
+

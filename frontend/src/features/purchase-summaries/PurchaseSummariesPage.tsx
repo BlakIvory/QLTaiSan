@@ -97,18 +97,18 @@ export default function PurchaseSummariesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="page-title">Bảng tổng hợp đề nghị mua</h1>
           <p className="page-subtitle">Gộp các đề nghị mua từ các khoa/phòng → lập bảng tổng hợp → lập tờ trình BGĐ</p>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.setFieldsValue({ summary_date: dayjs() }); setOpen(true) }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.setFieldsValue({ summary_date: dayjs() }); setOpen(true) }} className="w-full sm:w-auto self-start sm:self-auto shrink-0">
           Lập bảng tổng hợp
         </Button>
       </div>
 
       <Card>
-        <Table rowKey="id" loading={isLoading} dataSource={summaries} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} />
+        <Table rowKey="id" loading={isLoading} dataSource={summaries} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} scroll={{ x: 800 }} />
       </Card>
 
       {/* Modal lập bảng tổng hợp */}

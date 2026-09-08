@@ -202,12 +202,14 @@ export default function PurchaseRequestsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="page-title">Đề nghị mua tài sản</h1>
           <p className="page-subtitle">Cá nhân / khoa phòng lập đề nghị mua thiết bị → gửi lên phòng tổng hợp</p>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Lập đề nghị mua</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} className="w-full sm:w-auto self-start sm:self-auto shrink-0">
+          Lập đề nghị mua
+        </Button>
       </div>
 
       <Card>
@@ -215,7 +217,7 @@ export default function PurchaseRequestsPage() {
           placeholder="Vui lòng nhập mã hoặc tên tài sản đề nghị"
           onSearch={setSearch} allowClear className="mb-4"
         />
-        <Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} />
+        <Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} scroll={{ x: 800 }} />
       </Card>
 
       {/* Modal tạo/sửa */}

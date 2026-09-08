@@ -124,21 +124,22 @@ export default function ProposalsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="page-title">Tờ trình chủ trương mua sắm</h1>
           <p className="page-subtitle">Lập tờ trình từ bảng tổng hợp → trình Ban giám đốc phê duyệt</p>
         </div>
         {canCreate && (
           <Button type="primary" icon={<PlusOutlined />}
-            onClick={() => { form.setFieldsValue({ proposal_date: dayjs() }); setOpen(true) }}>
+            onClick={() => { form.setFieldsValue({ proposal_date: dayjs() }); setOpen(true) }}
+            className="w-full sm:w-auto self-start sm:self-auto shrink-0">
             Lập tờ trình
           </Button>
         )}
       </div>
 
       <Card>
-        <Table rowKey="id" loading={isLoading} dataSource={proposals} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} />
+        <Table rowKey="id" loading={isLoading} dataSource={proposals} columns={columns} pagination={DEFAULT_TABLE_PAGINATION} scroll={{ x: 800 }} />
       </Card>
 
       {/* Modal lập tờ trình */}
