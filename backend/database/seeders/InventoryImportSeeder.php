@@ -172,7 +172,7 @@ class InventoryImportSeeder extends Seeder
 
         Equipment::where('equipment_code', 'LIKE', 'TB-KB-%')->forceDelete();
         Location::where('code', 'LIKE', '%KKB-%')->delete();
-        Organization::where('code', 'LIKE', 'KKB-%')->delete();
+        Organization::withTrashed()->where('code', 'LIKE', 'KKB-%')->forceDelete();
 
         $currentRoomOrg = null;
         $currentLocation = null;
@@ -221,17 +221,29 @@ class InventoryImportSeeder extends Seeder
                     $locationIndex++;
                     $roomCode = sprintf("KKB-P%02d", $locationIndex);
 
-                    // Tạo Đơn vị cấp Phòng (ROOM) trực thuộc Khoa Khám bệnh
-                    $roomOrg = Organization::updateOrCreate(
-                        ['code' => $roomCode],
-                        [
+                    // Tạo hoặc phục hồi Đơn vị cấp Phòng (ROOM) trực thuộc Khoa Khám bệnh
+                    $roomOrg = Organization::withTrashed()->where('code', $roomCode)->first();
+                    if ($roomOrg) {
+                        if ($roomOrg->trashed()) {
+                            $roomOrg->restore();
+                        }
+                        $roomOrg->update([
                             'name'        => $roomName,
                             'type'        => 'ROOM',
                             'parent_id'   => $dept->id,
                             'description' => "Phòng/Khu vực thuộc Khoa Khám bệnh (Kiểm kê 30/06/2026)",
                             'is_active'   => true,
-                        ]
-                    );
+                        ]);
+                    } else {
+                        $roomOrg = Organization::create([
+                            'code'        => $roomCode,
+                            'name'        => $roomName,
+                            'type'        => 'ROOM',
+                            'parent_id'   => $dept->id,
+                            'description' => "Phòng/Khu vực thuộc Khoa Khám bệnh (Kiểm kê 30/06/2026)",
+                            'is_active'   => true,
+                        ]);
+                    }
                     $roomOrgMap[$roomName] = $roomOrg;
 
                     // Tạo Vị trí lắp đặt (Location) gắn với Phòng

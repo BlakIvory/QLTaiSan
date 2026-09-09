@@ -225,6 +225,19 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 
         // Audit Logs
         Route::get('audit-logs', [AuditLogController::class, 'index']);
+
+        // System Maintenance: Reimport Inventory
+        Route::post('system/reimport-inventory', function () {
+            if (!auth()->user()->hasRole('admin')) {
+                return response()->json(['success' => false, 'message' => 'Chỉ quản trị viên mới được thực hiện thao tác này.'], 403);
+            }
+            \Illuminate\Support\Facades\Artisan::call('import:inventory', ['--fresh' => true]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã làm sạch và nạp lại toàn bộ thiết bị theo phòng thành công.',
+                'output'  => \Illuminate\Support\Facades\Artisan::output(),
+            ]);
+        });
     });
 
 });

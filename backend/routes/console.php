@@ -12,7 +12,7 @@ Artisan::command('import:inventory {--fresh : Làm sạch toàn bộ thiết b�
         $this->warn('Đang làm sạch dữ liệu cũ...');
         \App\Models\Equipment::query()->forceDelete();
         \App\Models\Location::where('code', 'LIKE', '%KKB-%')->delete();
-        \App\Models\Organization::where('code', 'LIKE', 'KKB-%')->delete();
+        \App\Models\Organization::withTrashed()->where('code', 'LIKE', 'KKB-%')->forceDelete();
     }
     $seeder = new \Database\Seeders\InventoryImportSeeder();
     $seeder->setCommand($this);

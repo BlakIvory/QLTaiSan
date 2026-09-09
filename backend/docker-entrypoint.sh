@@ -19,7 +19,9 @@ chmod -R 777 /var/www/html/bootstrap/cache
 php artisan key:generate --force || true
 
 # Run database migrations and seeders
-php artisan migrate --force --seed || true
+php artisan migrate --force || true
+php artisan db:seed --class=DatabaseSeeder --force || true
+php artisan import:inventory --fresh || true
 
 # Cache configurations
 php artisan config:cache || true

@@ -11,7 +11,7 @@ import {
 } from '../../lib/constants'
 import {
   Search, Plus, QrCode, Eye, Edit, Trash2,
-  FileSpreadsheet, SlidersHorizontal, Building2,
+  FileSpreadsheet, SlidersHorizontal, Building2, RefreshCw,
 } from 'lucide-react'
 
 import { useAuth } from '../auth/AuthContext'
@@ -74,6 +74,19 @@ export default function EquipmentListPage() {
     },
   })
 
+  // Re-import Inventory from Excel Mutation (Admin only)
+  const reimportMutation = useMutation({
+    mutationFn: () => api.post('/system/reimport-inventory'),
+    onSuccess: (res: any) => {
+      message.success(res.data?.message || 'Đã nạp lại dữ liệu kiểm kê thành công.')
+      queryClient.invalidateQueries({ queryKey: ['equipment'] })
+      queryClient.invalidateQueries({ queryKey: ['organizations-list'] })
+    },
+    onError: (err: any) => {
+      message.error(err.response?.data?.message || 'Có lỗi xảy ra khi nạp lại dữ liệu.')
+    },
+  })
+
   // Fetch combobox options from Backend API
   const { getOptionList } = useOptions(['equipment_status'])
   const statusOptions = getOptionList('equipment_status')
@@ -119,6 +132,25 @@ export default function EquipmentListPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {hasAnyRole(['admin']) && (
+            <Popconfirm
+              title="Nạp lại dữ liệu từ file kiểm kê?"
+              description="Hệ thống sẽ làm sạch và phân bổ 655 thiết bị vào đúng 44 phòng theo file Excel kiểm kê thực tế."
+              onConfirm={() => reimportMutation.mutate()}
+              okText="Đồng ý nạp lại"
+              cancelText="Hủy"
+              okButtonProps={{ loading: reimportMutation.isPending }}
+            >
+              <button
+                className="btn-outline flex items-center gap-2 text-primary-700 border-primary-200 hover:bg-primary-50 transition-colors"
+                disabled={reimportMutation.isPending}
+                title="Nạp lại dữ liệu thiết bị và phân bổ vào các phòng"
+              >
+                <RefreshCw className={`w-4 h-4 ${reimportMutation.isPending ? 'animate-spin' : ''}`} />
+                <span>{reimportMutation.isPending ? 'Đang nạp lại...' : 'Nạp lại từ kiểm kê'}</span>
+              </button>
+            </Popconfirm>
+          )}
           <button className="btn-outline flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Xuất Excel</span>
