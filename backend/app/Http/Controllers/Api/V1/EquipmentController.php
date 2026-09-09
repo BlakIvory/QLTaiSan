@@ -16,7 +16,7 @@ class EquipmentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Equipment::with(['equipmentType', 'manufacturer', 'organization', 'location']);
+        $query = Equipment::with(['equipmentType', 'manufacturer', 'organization.parent', 'location']);
 
         // Search
         if ($search = $request->input('search')) {
@@ -42,11 +42,27 @@ class EquipmentController extends Controller
 
         if ($canViewAll) {
             if ($orgId = $request->input('organization_id')) {
-                $query->where('organization_id', $orgId);
+                $targetOrg = \App\Models\Organization::find($orgId);
+                if ($targetOrg) {
+                    $orgIds = !empty($targetOrg->path)
+                        ? \App\Models\Organization::where('path', 'like', "{$targetOrg->path}%")->pluck('id')
+                        : \App\Models\Organization::where('id', $targetOrg->id)->orWhere('parent_id', $targetOrg->id)->pluck('id');
+                    $query->whereIn('organization_id', $orgIds);
+                } else {
+                    $query->where('organization_id', $orgId);
+                }
             }
         } else {
             if ($user && $user->organization_id) {
-                $query->where('organization_id', $user->organization_id);
+                $userOrg = \App\Models\Organization::find($user->organization_id);
+                if ($userOrg) {
+                    $orgIds = !empty($userOrg->path)
+                        ? \App\Models\Organization::where('path', 'like', "{$userOrg->path}%")->pluck('id')
+                        : \App\Models\Organization::where('id', $userOrg->id)->orWhere('parent_id', $userOrg->id)->pluck('id');
+                    $query->whereIn('organization_id', $orgIds);
+                } else {
+                    $query->where('organization_id', $user->organization_id);
+                }
             } else {
                 $query->whereRaw('1 = 0');
             }
@@ -140,7 +156,19 @@ class EquipmentController extends Controller
     {
         $user = auth()->user();
         if ($user && !$this->canViewAllEquipment($user)) {
-            if ($equipment->organization_id !== $user->organization_id) {
+            $userOrg = $user->organization;
+            $isAllowed = false;
+            if ($userOrg) {
+                if ($equipment->organization_id === $userOrg->id) {
+                    $isAllowed = true;
+                } elseif (!empty($userOrg->path)) {
+                    $eqOrg = $equipment->organization;
+                    if ($eqOrg && str_starts_with((string)$eqOrg->path, (string)$userOrg->path)) {
+                        $isAllowed = true;
+                    }
+                }
+            }
+            if (!$isAllowed) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Bạn không có quyền truy cập thông tin thiết bị của khoa/phòng khác.',
@@ -152,7 +180,7 @@ class EquipmentController extends Controller
             'success' => true,
             'data'    => $equipment->load([
                 'equipmentType', 'manufacturer', 'country', 'fundingSource',
-                'supplier', 'organization', 'location', 'responsibleUser',
+                'supplier', 'organization.parent', 'location', 'responsibleUser',
                 'images', 'statusHistories.changedBy', 'locationHistories',
                 'repairs', 'maintenancePlans', 'inspections',
             ]),

@@ -11,7 +11,8 @@ Artisan::command('import:inventory {--fresh : Làm sạch toàn bộ thiết b�
     if ($this->option('fresh')) {
         $this->warn('Đang làm sạch dữ liệu cũ...');
         \App\Models\Equipment::query()->forceDelete();
-        \App\Models\Location::where('code', 'LIKE', 'KKB-%')->delete();
+        \App\Models\Location::where('code', 'LIKE', '%KKB-%')->delete();
+        \App\Models\Organization::where('code', 'LIKE', 'KKB-%')->delete();
     }
     $seeder = new \Database\Seeders\InventoryImportSeeder();
     $seeder->setCommand($this);

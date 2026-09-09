@@ -34,7 +34,8 @@ interface Equipment {
   status: string
   importance_level: string
   current_location?: string
-  organization?: { id: number; name: string }
+  organization?: { id: number; name: string; parent?: { id: number; name: string } }
+  location?: { id: number; name: string }
   equipment_type?: { id: number; name: string }
   created_at: string
 }
@@ -263,7 +264,14 @@ export default function EquipmentListPage() {
                       {eq.equipment_type?.name ?? '—'}
                     </td>
                     <td className="text-slate-600 text-sm">
-                      {eq.organization?.name ?? 'Chưa phân bổ'}
+                      <div className="font-medium text-slate-800">
+                        {eq.organization?.name ?? 'Chưa phân bổ'}
+                      </div>
+                      {eq.organization?.parent && (
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          {eq.organization.parent.name}
+                        </div>
+                      )}
                     </td>
                     <td>
                       <p className="text-xs text-slate-700 font-mono">{eq.model || '—'}</p>

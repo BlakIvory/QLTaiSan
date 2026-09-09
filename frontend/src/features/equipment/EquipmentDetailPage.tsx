@@ -121,11 +121,18 @@ export default function EquipmentDetailPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-slate-500 block text-xs">Khoa / Phòng quản lý:</span>
-                <span className="font-medium text-slate-800">{equipment.organization?.name ?? 'Chưa phân bổ (Lưu kho)'}</span>
+                <span className="font-medium text-slate-800">
+                  {equipment.organization?.name ?? 'Chưa phân bổ (Lưu kho)'}
+                  {equipment.organization?.parent && (
+                    <span className="text-xs text-slate-500 block font-normal mt-0.5">
+                      Trực thuộc: {equipment.organization.parent.name}
+                    </span>
+                  )}
+                </span>
               </div>
               <div>
                 <span className="text-slate-500 block text-xs">Vị trí lắp đặt:</span>
-                <span className="font-medium text-slate-800">{equipment.location?.name ?? '—'}</span>
+                <span className="font-medium text-slate-800">{equipment.location?.name ?? equipment.organization?.name ?? '—'}</span>
               </div>
               <div>
                 <span className="text-slate-500 block text-xs">Nguyên giá:</span>

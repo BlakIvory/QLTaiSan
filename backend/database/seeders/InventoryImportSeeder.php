@@ -170,7 +170,13 @@ class InventoryImportSeeder extends Seeder
             return preg_match('/^(X{0,4})(IX|IV|V?I{0,4})$/i', $s) && strlen($s) > 0;
         };
 
+        Equipment::where('equipment_code', 'LIKE', 'TB-KB-%')->forceDelete();
+        Location::where('code', 'LIKE', '%KKB-%')->delete();
+        Organization::where('code', 'LIKE', 'KKB-%')->delete();
+
+        $currentRoomOrg = null;
         $currentLocation = null;
+        $roomOrgMap = [];
         $locationMap = [];
         $locationIndex = 0;
         $itemsImported = 0;
@@ -211,26 +217,43 @@ class InventoryImportSeeder extends Seeder
 
             if ($isRoomHeader) {
                 $roomName = $colB;
-                if (!isset($locationMap[$roomName])) {
+                if (!isset($roomOrgMap[$roomName])) {
                     $locationIndex++;
-                    $locCode = sprintf("KKB-P%02d", $locationIndex);
-                    $location = Location::firstOrCreate(
+                    $roomCode = sprintf("KKB-P%02d", $locationIndex);
+
+                    // Tạo Đơn vị cấp Phòng (ROOM) trực thuộc Khoa Khám bệnh
+                    $roomOrg = Organization::updateOrCreate(
+                        ['code' => $roomCode],
+                        [
+                            'name'        => $roomName,
+                            'type'        => 'ROOM',
+                            'parent_id'   => $dept->id,
+                            'description' => "Phòng/Khu vực thuộc Khoa Khám bệnh (Kiểm kê 30/06/2026)",
+                            'is_active'   => true,
+                        ]
+                    );
+                    $roomOrgMap[$roomName] = $roomOrg;
+
+                    // Tạo Vị trí lắp đặt (Location) gắn với Phòng
+                    $locCode = sprintf("LOC-KKB-P%02d", $locationIndex);
+                    $location = Location::updateOrCreate(
                         ['code' => $locCode],
                         [
                             'name'            => $roomName,
-                            'organization_id' => $dept->id,
-                            'description'     => "Vị trí tại Khoa Khám bệnh (Kiểm kê 30/06/2026)",
+                            'organization_id' => $roomOrg->id,
+                            'description'     => "Vị trí tại {$dept->name} - {$roomName}",
                             'is_active'       => true,
                         ]
                     );
                     $locationMap[$roomName] = $location;
                 }
+                $currentRoomOrg = $roomOrgMap[$roomName];
                 $currentLocation = $locationMap[$roomName];
                 continue;
             }
 
             // Equipment Item
-            if (!empty($colB) && $currentLocation) {
+            if (!empty($colB) && $currentRoomOrg) {
                 $rawQty = 1;
                 if (is_numeric($colF) && (float)$colF > 0) {
                     $rawQty = (float)$colF;
@@ -269,13 +292,13 @@ class InventoryImportSeeder extends Seeder
                     'in_use_date'            => '2026-06-30',
                     'original_price'         => $unitPrice > 0 ? $unitPrice : null,
                     'current_value'          => $unitPrice > 0 ? $unitPrice : null,
-                    'organization_id'        => $dept->id,
+                    'organization_id'        => $currentRoomOrg->id,
                     'location_id'            => $currentLocation->id,
                     'status'                 => 'IN_USE',
                     'importance_level'       => $typeMeta['importance_level'],
                     'requires_maintenance'   => in_array($typeCode, ['MAY-DO-HA-CD', 'DEN-DOC-PHIM', 'TB-NOI-SOI-TMH', 'MAY-VI-TINH', 'MAY-IN-QUET', 'QUAT-CAY-NUOC', 'TU-LANH-GD']),
                     'maintenance_cycle_days' => in_array($typeCode, ['TB-NOI-SOI-TMH']) ? 90 : 180,
-                    'notes'                  => "Nhập từ file kiểm kê tài sản ngày 30/06/2026",
+                    'notes'                  => "Nhập từ file kiểm kê tài sản ngày 30/06/2026 ({$currentRoomOrg->name})",
                 ]);
 
                 $itemsImported++;

@@ -5,3 +5,4 @@ run-backend.cmd
 run-frontend.cmd
 tests/playwright-tests/node_modules/
 tests/playwright-tests/screenshots/
+~$*
