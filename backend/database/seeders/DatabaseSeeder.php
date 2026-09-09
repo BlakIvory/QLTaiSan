@@ -230,89 +230,9 @@ class DatabaseSeeder extends Seeder
         );
         $leader->syncRoles(['leader']);
 
-        // ─── Sample Equipment Data ──────────────────────────────────
-        $sampleEquipments = [
-            [
-                'equipment_code'      => 'TB-2026-0001',
-                'asset_code'          => 'TS-SA-01',
-                'name'                => 'Máy siêu âm màu 4D Voluson E10',
-                'equipment_type_id'   => $type1->id,
-                'model'               => 'Voluson E10',
-                'serial'              => 'SN-GE-4D-9988',
-                'country_id'          => $jp->id,
-                'year_of_manufacture' => 2023,
-                'purchase_date'       => '2024-01-15',
-                'in_use_date'         => '2024-02-01',
-                'original_price'      => 1200000000.00,
-                'current_value'       => 1050000000.00,
-                'funding_source_id'   => $funding->id,
-                'supplier_id'         => $supplier->id,
-                'warranty_start'      => '2024-01-15',
-                'warranty_end'        => '2026-08-25',
-                'organization_id'     => $dept1->id,
-                'location_id'         => $loc1->id,
-                'status'              => EquipmentStatus::IN_USE->value,
-                'importance_level'    => ImportanceLevel::CRITICAL->value,
-                'requires_maintenance'=> true,
-                'maintenance_cycle_days' => 180,
-                'next_maintenance_date'  => '2026-07-15', // Overdue
-            ],
-            [
-                'equipment_code'      => 'TB-2026-0002',
-                'asset_code'          => 'TS-MT-02',
-                'name'                => 'Máy thở cao cấp Servo-u',
-                'equipment_type_id'   => $type2->id,
-                'model'               => 'Servo-u',
-                'serial'              => 'SN-MAQUET-7711',
-                'country_id'          => $de->id,
-                'year_of_manufacture' => 2022,
-                'purchase_date'       => '2023-05-10',
-                'in_use_date'         => '2023-06-01',
-                'original_price'      => 850000000.00,
-                'current_value'       => 680000000.00,
-                'funding_source_id'   => $funding->id,
-                'supplier_id'         => $supplier->id,
-                'warranty_start'      => '2023-05-10',
-                'warranty_end'        => '2025-05-10',
-                'organization_id'     => $dept2->id,
-                'location_id'         => $loc2->id,
-                'status'              => EquipmentStatus::UNDER_REPAIR->value,
-                'importance_level'    => ImportanceLevel::HIGH->value,
-                'requires_maintenance'=> true,
-                'maintenance_cycle_days' => 90,
-                'next_maintenance_date'  => '2026-08-30',
-            ],
-            [
-                'equipment_code'      => 'TB-2026-0003',
-                'asset_code'          => 'TS-MN-03',
-                'name'                => 'Monitor theo dõi bệnh nhân B450',
-                'equipment_type_id'   => $type3->id,
-                'model'               => 'B450',
-                'serial'              => 'SN-GE-MON-3344',
-                'country_id'          => $us->id,
-                'year_of_manufacture' => 2024,
-                'purchase_date'       => '2024-03-20',
-                'in_use_date'         => '2024-04-01',
-                'original_price'      => 150000000.00,
-                'current_value'       => 140000000.00,
-                'funding_source_id'   => $funding->id,
-                'supplier_id'         => $supplier->id,
-                'warranty_start'      => '2024-03-20',
-                'warranty_end'        => '2026-03-20',
-                'organization_id'     => $warehouse->id,
-                'location_id'         => $loc3->id,
-                'status'              => EquipmentStatus::AVAILABLE->value,
-                'importance_level'    => ImportanceLevel::MEDIUM->value,
-                'requires_maintenance'=> true,
-                'maintenance_cycle_days' => 180,
-                'next_maintenance_date'  => '2026-10-01',
-            ],
-        ];
+        // ─── Import Real Inventory Data (Khoa Khám bệnh & 655 Equipment) ────
+        $this->call(InventoryImportSeeder::class);
 
-        foreach ($sampleEquipments as $eq) {
-            Equipment::firstOrCreate(['equipment_code' => $eq['equipment_code']], $eq);
-        }
-
-        $this->command->info('✅ Seed dữ liệu mẫu thành công!');
+        $this->command->info('✅ Khởi tạo hệ thống và nhập dữ liệu kiểm kê thành công!');
     }
 }
